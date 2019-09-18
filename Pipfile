@@ -13,4 +13,4 @@ ecdsa = "*"
 pyrchain = {git = "https://github.com/rchain/pyrchain.git"}
 
 [requires]
-python_version = "3"
+python_version = "3.6"
