@@ -117,7 +117,18 @@ systemctl reload nginx
 mkdir -p /mnt/heapdumps
 
 install -d -m755 /usr/lib/systemd/system/
-install -C -m644 *.service *.timer *.mount -t /usr/lib/systemd/system/
+install -C -m644 sync-diag.service *.timer *.mount -t /usr/lib/systemd/system/
+
+if [[ ${PROFILE:-} = devnet2 ]]; then
+	apt install --yes --no-install-recommends python3-pip
+	python3 -m pip install --user pipenv
+	/root/.local/bin/pipenv sync
+	install --compare --mode=644 autopropose.py.service --no-target-directory \
+		/usr/lib/systemd/system/autopropose.service
+else
+	install --compare --mode=644 autopropose.service --no-target-directory \
+		/usr/lib/systemd/system/autopropose.service
+fi
 
 for unit in sync-diag.timer autopropose.service mnt-heapdumps.mount; do
 	unit_state=$(systemctl list-unit-files --no-legend $unit | awk '{print $2}')
