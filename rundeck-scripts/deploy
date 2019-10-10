@@ -24,6 +24,7 @@ fi
 priv_key="$RD_OPTION_DEPLOY_KEY"
 if [[ -z "$priv_key" ]]; then
 	read priv_key pub_key <<<$(random_key)
+	RD_OPTION_DEPLOY_KEY=$priv_key
 fi
 
 echo "Deploying $contract with private key $priv_key"
