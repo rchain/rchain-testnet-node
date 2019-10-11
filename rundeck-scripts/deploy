@@ -6,12 +6,12 @@ if [[ -z "$RD_OPTION_CONTRACT" || "$RD_OPTION_CONTRACT" == none ]]; then
 	# Special case for autopropose
 	exit 0
 elif [[ "$RD_OPTION_CONTRACT" == random ]]; then
-	contract="$(docker exec rnode sh -c 'ls ./examples/*.rho' | sort -R | head -1)"
+	contract="$(ls /var/lib/rnode-static/random-contracts/*.rho | sort -R | head -1)"
 elif [[ "$RD_OPTION_CONTRACT" =~ ^https?:// ]]; then
-	contract=/var/lib/rnode-static/rundeck-contract.rho
+	contract="/var/lib/rnode-static/rundeck-contract.rho"
 	logcmd curl -fsSL -o $contract "$RD_OPTION_CONTRACT"
 elif [[ "$RD_OPTION_CONTRACT" != */* ]]; then
-	contract="./examples/$RD_OPTION_CONTRACT"
+	contract="/var/lib/rnode-static/random-contracts/$RD_OPTION_CONTRACT"
 else
 	contract="$RD_OPTION_CONTRACT"
 fi
@@ -24,7 +24,6 @@ fi
 priv_key="$RD_OPTION_DEPLOY_KEY"
 if [[ -z "$priv_key" ]]; then
 	read priv_key pub_key <<< $(random_key)
-	export RD_OPTION_DEPLOY_KEY=$priv_key
 fi
 
 echo "Deploying $contract with private key $priv_key"

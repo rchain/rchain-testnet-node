@@ -137,3 +137,13 @@ if [[ ! -e YourKit-JavaProfiler-$yourkit_version ]]; then
 	ln -srf YourKit-JavaProfiler-$yourkit_version YourKit-JavaProfiler
 fi
 popd >/dev/null
+
+# download contracts for random execution
+rm -Rf /var/lib/rnode-static/random-contracts
+curl -fsSL -o /tmp/list.txt \
+	https://gist.githubusercontent.com/nzpr/ff7571a1b8baea92b0c426104429e711/raw/2e8c00c560b90cc4faa85c0a4038e33b3fb1dd27/contracts
+while read url; do
+	wget -P /var/lib/rnode-static/random-contracts $url
+done < /tmp/list.txt
+rm /tmp/list.txt
+
