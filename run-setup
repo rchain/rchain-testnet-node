@@ -39,6 +39,8 @@ source ./venv/bin/activate
 # pyjq setup fails with errors similar to https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=917006
 # explicitly installing wheel fixes the error
 pip3 install wheel
+# upgrade setuptools for pyrchain to work
+pip3 install -U setuptools
 pip3 install -r requirements.txt
 popd >/dev/null
 

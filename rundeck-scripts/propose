@@ -4,8 +4,7 @@ source "$(dirname $0)/functions"
 
 echo "Proposing"
 ret=0
-output="$(docker exec rnode \
-	./bin/rnode -c /var/lib/rnode-static/rnode.conf propose 2>&1)" || ret=$?
+output="$(python3 $INSTALL_DIR/scripts/propose.py 2>&1)" || ret=$?
 
 if [[ $ret -ne 0 && "$output" == *NoNewDeploys* ]]; then
 	ret=0

@@ -23,17 +23,9 @@ fi
 
 priv_key="$RD_OPTION_DEPLOY_KEY"
 if [[ -z "$priv_key" ]]; then
-	read priv_key pub_key <<<$(random_key)
-	RD_OPTION_DEPLOY_KEY=$priv_key
+	read priv_key pub_key <<< $(random_key)
+	export RD_OPTION_DEPLOY_KEY=$priv_key
 fi
 
 echo "Deploying $contract with private key $priv_key"
-logcmd docker exec rnode ./bin/rnode \
-	$RD_OPTION_RNODE_LAUNCHER_ARGS \
-	-c /var/lib/rnode-static/rnode.conf \
-	deploy \
-	--phlo-limit 1000000000 \
-	--phlo-price 1 \
-	--private-key $priv_key \
-	$RD_OPTION_RNODE_DEPLOY_ARGS \
-	$contract
+python3 $INSTALL_DIR/scripts/deploy.py $priv_key $contract
