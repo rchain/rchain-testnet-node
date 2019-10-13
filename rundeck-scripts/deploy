@@ -6,12 +6,12 @@ if [[ -z "$RD_OPTION_CONTRACT" || "$RD_OPTION_CONTRACT" == none ]]; then
 	# Special case for autopropose
 	exit 0
 elif [[ "$RD_OPTION_CONTRACT" == random ]]; then
-	contract="$(ls /var/lib/rnode-static/random-contracts/*.rho | sort -R | head -1)"
+	contract="$(ls /var/lib/rnode-static/contracts/*.rho | sort -R | head -1)"
 elif [[ "$RD_OPTION_CONTRACT" =~ ^https?:// ]]; then
 	contract="/var/lib/rnode-static/rundeck-contract.rho"
 	logcmd curl -fsSL -o $contract "$RD_OPTION_CONTRACT"
 elif [[ "$RD_OPTION_CONTRACT" != */* ]]; then
-	contract="/var/lib/rnode-static/random-contracts/$RD_OPTION_CONTRACT"
+	contract="/var/lib/rnode-static/contracts/$RD_OPTION_CONTRACT"
 else
 	contract="$RD_OPTION_CONTRACT"
 fi
