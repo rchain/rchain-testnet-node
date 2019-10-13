@@ -1,5 +1,6 @@
 import grpc
 import logging
+import sys
 from rchain.client import RClient
 from rchain.client import RClientException
 
@@ -14,4 +15,4 @@ with grpc.insecure_channel('localhost:40401') as channel:
 		# NoNewDeploys is a valid scenario
 		if "NoNewDeploys" not in str(e):
 			error=1
-print(error)
+sys.exit(error)

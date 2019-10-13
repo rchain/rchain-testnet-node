@@ -40,7 +40,7 @@ source ./venv/bin/activate
 # explicitly installing wheel fixes the error
 pip3 install wheel
 # upgrade setuptools for pyrchain to work
-pip3 install -U setuptools
+pip3 install -U setuptools>=40.1
 pip3 install -r requirements.txt
 popd >/dev/null
 
