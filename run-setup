@@ -20,7 +20,7 @@ apt install -y --no-install-recommends \
 	coreutils tree \
 	build-essential autoconf automake libtool \
 	python3 python3-venv python3-dev \
-	unzip graphviz
+	unzip graphviz subversion
 
 curl -sSfL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
 echo 'deb [arch=amd64] https://download.docker.com/linux/ubuntu cosmic stable' \
@@ -138,12 +138,7 @@ if [[ ! -e YourKit-JavaProfiler-$yourkit_version ]]; then
 fi
 popd >/dev/null
 
-# download contracts for random execution
-rm -Rf /var/lib/rnode-static/contracts
-curl -fsSL -o /tmp/list.txt \
-	https://gist.githubusercontent.com/nzpr/ff7571a1b8baea92b0c426104429e711/raw/2e8c00c560b90cc4faa85c0a4038e33b3fb1dd27/contracts
-while read url; do
-	wget -P /var/lib/rnode-static/contracts $url
-done < /tmp/list.txt
-rm /tmp/list.txt
-
+# download contracts
+svn export --force \
+	https://github.com/rchain/rchain/branches/dev/rholang/examples \
+	/var/lib/rnode-static/contracts
