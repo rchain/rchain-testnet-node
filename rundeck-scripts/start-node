@@ -39,6 +39,8 @@ try_download_file()
 )
 
 try_download_file "$RD_OPTION_WALLETS_FILE_URL" /var/lib/rnode/genesis/wallets.txt
+# This is the wallet to pay for deploys during autopropose
+echo "0x4f8237a7172bb5d57d18f25ebcf9e43f5b61e2bf,1000000000000000000,0" >> /var/lib/rnode/genesis/wallets.txt
 try_download_file "$RD_OPTION_RNODE_OVERRIDE_CONF_URL" /var/lib/rnode/rnode.override.conf 600
 
 ln -sf /var/lib/rnode-static/node.*.pem /var/lib/rnode/
