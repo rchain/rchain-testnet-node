@@ -1,15 +1,15 @@
-from datetime import datetime, timedelta
+import datetime
 import socket
 from influxdb import InfluxDBClient
 from pyhocon import ConfigFactory
 import sys
 
-def reportInfluxDBMetric(metric, value, host, port):
+def reportInfluxDBMetric(metric, value, host, port, db):
     json_body = {
         "tags": {
             "host": socket.gethostname()
         },
-        "time": (datetime.now()-timedelta(seconds=value)).isoformat(),
+        "time": datetime.datetime.now().isoformat(),
         "points": [{
             "measurement": metric,
             "fields": {
@@ -17,7 +17,7 @@ def reportInfluxDBMetric(metric, value, host, port):
             }
         }]
     }
-    client = InfluxDBClient(host=host, use_udp=True, udp_port=port)
+    client = InfluxDBClient(host=host, database=db, use_udp=True, udp_port=port)
     client.send_packet(json_body)
 
 if __name__ == '__main__':
@@ -28,7 +28,6 @@ if __name__ == '__main__':
     conf = ConfigFactory.parse_file(config_path)
     influx_host = conf['influx_host']
     influx_port = conf['influx_port']
+    influx_db = conf['influx_db']
 
-    #influx use different ports to distinguish between databases when using UDP,
-    #so we do not specify database
-    reportInfluxDBMetric(metric, value, influx_host, influx_port)
+    reportInfluxDBMetric(metric, value, influx_host, influx_port, influx_db)
