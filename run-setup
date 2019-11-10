@@ -46,9 +46,17 @@ pip3 install -U -r requirements.txt
 popd >/dev/null
 
 # config file for python scripts
-echo "influx_host: perf-bootstrap.c.developer-222401.internal
-influx_port: 8093
-influx_db:" $PROFILE > scripts/scripts.conf
+echo "influx_host: perf-bootstrap.c.developer-222401.internal" > scripts/scripts.conf
+case "$PROFILE" in
+"sandboxnet")
+    echo "influx_port: 8093" >> scripts/scripts.conf
+    ;;
+"testnet")
+    echo "influx_port: 8090" >> scripts/scripts.conf
+    ;;
+*)
+    ;;
+esac
 
 
 network_dir="node-files${PROFILE:+.$PROFILE}"
