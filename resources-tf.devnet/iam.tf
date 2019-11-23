@@ -7,3 +7,4 @@ resource "google_storage_bucket_iam_member" "member" {
   role = "roles/storage.objectCreator"
   member = "serviceAccount:${google_service_account.svc_account_node.email}"
 }
+

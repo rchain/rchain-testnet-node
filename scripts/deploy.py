@@ -16,6 +16,6 @@ with grpc.insecure_channel('localhost:40401') as channel:
     with open(sys.argv[2]) as file:
         data = file.read()
         start_time = time.time()
-        client.deploy(PrivateKey.from_hex(sys.argv[1]), data, 1, 1000000000)
+        client.deploy_with_vabn_filled(PrivateKey.from_hex(sys.argv[1]), data, 1, 1000000000)
         dur = time.time() - start_time
         subprocess.run(['python3', 'reportInfluxDBMetric.py', 'pyrchain.deploytime', str(dur), config_path])
