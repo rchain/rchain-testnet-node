@@ -1,6 +1,7 @@
 resource "google_compute_address" "node_ext_addr" {
   count = var.node_count
   name = "${var.resources_name}-node${count.index}"
+  region = "us-west2"
   address_type = "EXTERNAL"
 }
 
@@ -17,7 +18,7 @@ resource "google_compute_instance" "node_host" {
   count = var.node_count
   name = "${var.resources_name}-node${count.index}"
   hostname = "node${count.index}${var.dns_suffix}"
-  machine_type = "n2-highmem-4"
+  machine_type = "n1-standard-4"
 
   boot_disk {
     initialize_params {
