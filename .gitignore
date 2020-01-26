@@ -2,3 +2,5 @@ __pycache__
 /resources-tf*/.terraform*
 /resources-tf*/terraform.tfstate*
 .idea
+*tfstate
+.DS_Store

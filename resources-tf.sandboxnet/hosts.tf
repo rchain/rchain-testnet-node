@@ -18,6 +18,9 @@ resource "google_compute_instance" "node_host" {
   name         = "${var.resources_name}-node${count.index}"
   hostname     = "node${count.index}${var.dns_suffix}"
   machine_type = "n1-standard-4"
+  enable_display = "false"
+  labels = {"label"="this_is_to_make_terraform_happy"}
+  metadata = {"metadata"="this_is_to_make_terraform_happy"}
 
   boot_disk {
     initialize_params {
