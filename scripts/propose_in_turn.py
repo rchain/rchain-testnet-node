@@ -14,6 +14,10 @@ servers:
       host: node2.sandboxnet.rchain-dev.tk
       grpc_port: 40401
       http_port: 40403
+readonly:
+    host: node102.sandboxnet.rchain-dev.tk
+    grpc_port: 40401
+    http_port: 40403
 orders:
   - node1
   - node2
@@ -56,15 +60,16 @@ parser.add_argument("-c", "--config-file", action="store", type=str, required=Tr
 args = parser.parse_args()
 
 class Client():
-    def __init__(self, grpc_client, websocket_client, host_name):
+    def __init__(self, grpc_client, websocket_host, host_name, is_read_only=False):
         self.grpc_client = grpc_client
-        self.websocket_client = websocket_client
+        self.websocket_host = websocket_host
         self.host_name = host_name
         self.asycn_ws = None
+        self.is_read_only = is_read_only
 
     async def setup(self):
-        self.asycn_ws = await self.websocket_client
-
+        if self.is_read_only:
+            self.asycn_ws = await websockets.connect(self.websocket_host, loop=loop)
 
 class DispatchCenter():
     def __init__(self, config):
@@ -74,7 +79,9 @@ class DispatchCenter():
         self.clients = {}
         for server in config['servers']:
             for host_name, host_config in server.items():
-                self.clients[host_name] = init_client(host_name,host_config)
+                self.clients[host_name] = init_client(host_name, host_config)
+
+        self.read_only = init_client("read_only", config['readonly'], True)
 
         self.orders = config['orders']
 
@@ -93,21 +100,29 @@ class DispatchCenter():
         self._running = False
 
     def deploy_and_propose(self, client):
-        client.grpc_client.deploy_with_vabn_filled(self.deploy_key, self.contract, self.phlo_price, self.phlo_limit,
+        try:
+            client.grpc_client.deploy_with_vabn_filled(self.deploy_key, self.contract, self.phlo_price, self.phlo_limit,
                                                    int(time.time() * 1000))
-        return client.grpc_client.propose()
+            client.grpc_client.propose()
+        except Exception as e:
+            logging.warning("Node {} can not deploy and propose because of {}".format(client.host_name, e))
 
     async def wait_server_to_receive(self, client, block_hash):
         logging.info("Waiting {} to receive {}".format(client.host_name, block_hash))
         while True:
-            message = await client.asycn_ws.recv()
-            logging.info("Receive {} from {}".format(message, client.host_name))
-            deco_mes = json.loads(message)
-            if deco_mes['event'] == 'block-added' and deco_mes['payload']['block-hash'] == block_hash:
-                logging.info("Waiting Done!")
-                break
-            else:
-                logging.info("The block hasn't been added")
+            try :
+                message = await client.asycn_ws.recv()
+                logging.info("Receive {} from {}".format(message, client.host_name))
+                deco_mes = json.loads(message)
+                if deco_mes['event'] == 'block-added' and deco_mes['payload']['block-hash'] == block_hash:
+                    logging.info("Waiting Done!")
+                    break
+                else:
+                    logging.info("The block hasn't been added")
+            except Exception as e:
+                logging.warning("Node {} can not receive websocket message because of {}. Reconnect".format(client.host_name, e))
+                self.read_only.setup()
+
 
     async def run(self):
         self._running = True
@@ -115,29 +130,28 @@ class DispatchCenter():
         await self.init_ws_client()
 
         current_server = self.queue.get_nowait()
-        while self._running:
+        while self.read_only.asycn_ws.open:
             logging.info("Going to deploy and propose in {}".format(current_server))
             block_hash = self.deploy_and_propose(self.clients[current_server])
             logging.info("Successfully deploy and propose {} in {}".format(block_hash, current_server))
             next_server = self.queue.get_nowait()
-            await self.wait_server_to_receive(self.clients[next_server], block_hash)
+            await self.wait_server_to_receive(self.read_only, block_hash)
             self.queue.put_nowait(current_server)
             current_server = next_server
 
     async def init_ws_client(self):
-        for client in self.clients.values():
-            await client.setup()
+        await self.read_only.setup()
 
 
 with open(args.config) as f:
     config = yaml.load(f)
 
 
-def init_client(host_name, host_config):
+def init_client(host_name, host_config, is_read_only=False):
     channel = grpc.insecure_channel("{}:{}".format(host_config['host'], host_config['grpc_port']))
     client = RClient(channel)
-    ws = websockets.connect("ws://{}:{}/ws/events".format(host_config['host'], host_config['http_port']), loop=loop)
-    return Client(client, ws, host_name)
+    ws = "ws://{}:{}/ws/events".format(host_config['host'], host_config['http_port'])
+    return Client(client, ws, host_name, is_read_only)
 
 
 dispatcher = DispatchCenter(config)
