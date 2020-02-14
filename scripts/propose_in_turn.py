@@ -130,8 +130,8 @@ class DispatchCenter():
         logging.info("Going to deploy and propose in {}".format(current_server))
         client = self.clients[current_server]
         try:
-            block_hash = client.deploy_and_propose(self.deploy_key, self.contract, self.phlo_price, self.phlo_limit)
             self.queue.append(current_server)
+            block_hash = client.deploy_and_propose(self.deploy_key, self.contract, self.phlo_price, self.phlo_limit)
             logging.info("Successfully deploy and propose {} in {}".format(block_hash, current_server))
             return block_hash
         except Exception as e:
