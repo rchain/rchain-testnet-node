@@ -23,6 +23,7 @@ servers:
 waitTimeout: 300
 waitInterval: 10
 error_node_records: /rchain/rchain-testnet-node/error.txt
+error_logs: /rchain/rchain-testnet-node/error.log
 deploy:
     contract: /rchain/rholang/examples/hello_world_again.rho
     phlo_limit: 100000
@@ -71,9 +72,10 @@ class Client():
     def deploy_and_propose(self, deploy_key, contract, phlo_price, phlo_limit):
         with grpc.insecure_channel(self.grpc_host) as channel:
             client = RClient(channel)
-            client.deploy_with_vabn_filled(deploy_key, contract, phlo_price,
+            deploy_id = client.deploy_with_vabn_filled(deploy_key, contract, phlo_price,
                                            phlo_limit,
                                            int(time.time() * 1000))
+            logging.info("Succefully deploy {}".format(deploy_id))
             return client.propose()
 
     def is_contain_block_hash(self, block_hash):
@@ -89,6 +91,7 @@ class Client():
 
 class DispatchCenter():
     def __init__(self, config):
+        self.setup_error_log(config['error_logs'])
         logging.info("Initialing dispatcher")
         self._config = config
 
@@ -125,6 +128,11 @@ class DispatchCenter():
 
         self._running = False
 
+    def setup_error_log(self, path):
+        handler = logging.FileHandler(path)
+        handler.setLevel(logging.ERROR)
+        root.addHandler(handler)
+
     def deploy_and_propose(self):
         current_server = self.queue.popleft()
         logging.info("Going to deploy and propose in {}".format(current_server))
@@ -137,7 +145,7 @@ class DispatchCenter():
         except Exception as e:
             logging.warning("Node {} can not deploy and propose because of {}".format(client.host_name, e))
 
-    def wait_server_to_receive(self, block_hash):
+    def wait_next_server_to_receive(self, block_hash):
         current_time = int(time.time())
         wait_server = self.queue.popleft()
         client = self.clients[wait_server]
@@ -156,10 +164,10 @@ class DispatchCenter():
                                                                                                block_hash,
                                                                                                self.wait_interval))
             except Exception as e:
-                logging.warning(
+                logging.error(
                     "There is something wrong with node {}, exception {}".format(client.host_name, e))
                 break
-        logging.info("Timeout waiting {} to receive {} at {}".format(client.host_name, block_hash, time.time()))
+        logging.error("Timeout waiting {} to receive {} at {}".format(client.host_name, block_hash, time.time()))
         self.write_error_node(client)
 
     def write_error_node(self, client):
@@ -172,7 +180,7 @@ class DispatchCenter():
         self._running = True
         while self._running:
             block_hash = self.deploy_and_propose()
-            self.wait_server_to_receive(block_hash)
+            self.wait_next_server_to_receive(block_hash)
 
 
 with open(args.config) as f:
