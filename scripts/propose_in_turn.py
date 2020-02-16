@@ -146,6 +146,7 @@ class DispatchCenter():
             logging.warning("Node {} can not deploy and propose because of {}".format(client.host_name, e))
 
     def wait_next_server_to_receive(self, block_hash):
+        """return True when the next server receive the block hash"""
         current_time = int(time.time())
         wait_server = self.queue.popleft()
         client = self.clients[wait_server]
@@ -157,7 +158,7 @@ class DispatchCenter():
                 if is_contain:
                     logging.info("Node {} successfully receive block hash {}".format(client.host_name, block_hash))
                     self.queue.appendleft(wait_server)
-                    return
+                    return True
                 else:
                     logging.info(
                         "Node {} does not have block hash {}. Sleep {} s and try again".format(client.host_name,
@@ -169,6 +170,7 @@ class DispatchCenter():
                 break
         logging.error("Timeout waiting {} to receive {} at {}".format(client.host_name, block_hash, time.time()))
         self.write_error_node(client)
+        return False
 
     def write_error_node(self, client):
         self.error_nodes.append((client.host_name, client.host))
@@ -177,11 +179,16 @@ class DispatchCenter():
                 f.write("{},{}\n".format(host_name, host))
 
     def run(self):
+        def wait(block_hash):
+            if self.wait_next_server_to_receive(block_hash):
+                return
+            else:
+                wait(block_hash)
+
         self._running = True
         while self._running:
             block_hash = self.deploy_and_propose()
-            self.wait_next_server_to_receive(block_hash)
-
+            wait(block_hash)
 
 with open(args.config) as f:
     config = yaml.load(f)
