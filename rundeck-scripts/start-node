@@ -46,6 +46,7 @@ try_download_file "$RD_OPTION_WALLETS_FILE_URL" /var/lib/rnode/genesis/wallets.t
 #	sk=$(())
 #	echo "$sk,1000000000000000000,0" >> /var/lib/rnode/genesis/wallets.txt
 #done < /var/lib/rnode-static/validator-public-keys.txt
+echo "" >> /var/lib/rnode/genesis/wallets.txt
 echo "308ec641584F7023ba501df8D352FF237B2894b1,1000000000000000000,0" >> /var/lib/rnode/genesis/wallets.txt
 echo "479be04F42A070F90149ce9e120c2A1919B87e82,1000000000000000000,0" >> /var/lib/rnode/genesis/wallets.txt
 echo "fC4e24604A4909EF4BA71A5c731bA96023D0C58f,1000000000000000000,0" >> /var/lib/rnode/genesis/wallets.txt
