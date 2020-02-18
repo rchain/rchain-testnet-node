@@ -170,8 +170,8 @@ class DispatchCenter():
     def update_queue(self):
         logging.info("Updating the host queue")
 
-        error_nodes = set(self.read_error_node())
-        all_hosts = set([client.host_name for client in self.clients])
+        error_nodes = set([host_name for host_name, _ in self.read_error_node()])
+        all_hosts = set([host_name for host_name in self.clients.keys()])
         queued_hosts = set(list(self.queue))
 
         hosts_to_add = all_hosts - error_nodes - queued_hosts
@@ -198,7 +198,7 @@ class DispatchCenter():
         if os.path.exists(self.error_node_records):
             with open(self.error_node_records) as f:
                 for line in f.readlines():
-                    host_name, host = line.split(',')
+                    host_name, host = line.strip('\n').split(',')
                     error_nodes.append((host_name, host))
         return error_nodes
 
