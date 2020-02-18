@@ -73,8 +73,8 @@ class Client():
         with grpc.insecure_channel(self.grpc_host) as channel:
             client = RClient(channel)
             deploy_id = client.deploy_with_vabn_filled(deploy_key, contract, phlo_price,
-                                           phlo_limit,
-                                           int(time.time() * 1000))
+                                                       phlo_limit,
+                                                       int(time.time() * 1000))
             logging.info("Succefully deploy {}".format(deploy_id))
             return client.propose()
 
@@ -114,17 +114,7 @@ class DispatchCenter():
 
         self.error_node_records = config['error_node_records']
 
-        self.error_nodes = []
-        if os.path.exists(self.error_node_records):
-            with open(self.error_node_records) as f:
-                for line in f.readlines():
-                    host_name, host = line.split(',')
-                    self.error_nodes.append((host_name, host))
-
-        self.queue = deque()
-        for client in self.clients.values():
-            if client.host_name not in self.error_nodes:
-                self.queue.append(client.host_name)
+        self.init_queue()
 
         self._running = False
 
@@ -172,11 +162,45 @@ class DispatchCenter():
         self.write_error_node(client)
         return False
 
+    def init_queue(self):
+        self.queue = deque()
+        for client in self.clients.values():
+            self.queue.append(client.host_name)
+
+    def update_queue(self):
+        logging.info("Updating the host queue")
+
+        error_nodes = set(self.read_error_node())
+        all_hosts = set([client.host_name for client in self.clients])
+        queued_hosts = set(list(self.queue))
+
+        hosts_to_add = all_hosts - error_nodes - queued_hosts
+        hosts_to_remove = error_nodes & queued_hosts
+        logging.info("The host {} is going to remove in the queue".format(hosts_to_remove))
+        logging.info("The host {} is going to add in the queue".format(hosts_to_add))
+
+        for host in hosts_to_add:
+            self.queue.append(host)
+
+        for host in hosts_to_remove:
+            self.queue.remove(host)
+
     def write_error_node(self, client):
-        self.error_nodes.append((client.host_name, client.host))
+        error_nodes = self.read_error_node()
+        error_nodes.append((client.host_name, client.host))
         with open(self.error_node_records, 'w') as f:
-            for host_name, host in self.error_nodes:
+            for host_name, host in error_nodes:
                 f.write("{},{}\n".format(host_name, host))
+        return error_nodes
+
+    def read_error_node(self):
+        error_nodes = []
+        if os.path.exists(self.error_node_records):
+            with open(self.error_node_records) as f:
+                for line in f.readlines():
+                    host_name, host = line.split(',')
+                    error_nodes.append((host_name, host))
+        return error_nodes
 
     def run(self):
         def wait(block_hash):
@@ -187,6 +211,7 @@ class DispatchCenter():
 
         self._running = True
         while self._running:
+            self.update_queue()
             block_hash = self.deploy_and_propose()
             wait(block_hash)
 
