@@ -72,11 +72,20 @@ class Client():
     def deploy_and_propose(self, deploy_key, contract, phlo_price, phlo_limit):
         with grpc.insecure_channel(self.grpc_host) as channel:
             client = RClient(channel)
-            deploy_id = client.deploy_with_vabn_filled(deploy_key, contract, phlo_price,
-                                                       phlo_limit,
-                                                       int(time.time() * 1000))
-            logging.info("Succefully deploy {}".format(deploy_id))
-            return client.propose()
+            try:
+                return client.propose()
+            except RClientException as e:
+                logging.info("The node {} doesn't have new deploy. Going to deploy now".format(self.host_name))
+                error_message = e.args[0]
+                if "NoNewDeploys" in error_message:
+                    deploy_id = client.deploy_with_vabn_filled(deploy_key, contract, phlo_price,
+                                                               phlo_limit,
+                                                               int(time.time() * 1000))
+                    logging.info("Succefully deploy {}".format(deploy_id))
+                    return client.propose()
+                else:
+                    raise e
+
 
     def is_contain_block_hash(self, block_hash):
         with grpc.insecure_channel(self.grpc_host) as channel:
