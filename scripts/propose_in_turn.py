@@ -72,11 +72,20 @@ class Client():
     def deploy_and_propose(self, deploy_key, contract, phlo_price, phlo_limit):
         with grpc.insecure_channel(self.grpc_host) as channel:
             client = RClient(channel)
-            deploy_id = client.deploy_with_vabn_filled(deploy_key, contract, phlo_price,
-                                                       phlo_limit,
-                                                       int(time.time() * 1000))
-            logging.info("Succefully deploy {}".format(deploy_id))
-            return client.propose()
+            try:
+                return client.propose()
+            except RClientException as e:
+                logging.info("The node {} doesn't have new deploy. Going to deploy now".format(self.host_name))
+                error_message = e.args[0]
+                if "NoNewDeploys" in error_message:
+                    deploy_id = client.deploy_with_vabn_filled(deploy_key, contract, phlo_price,
+                                                               phlo_limit,
+                                                               int(time.time() * 1000))
+                    logging.info("Succefully deploy {}".format(deploy_id))
+                    return client.propose()
+                else:
+                    raise e
+
 
     def is_contain_block_hash(self, block_hash):
         with grpc.insecure_channel(self.grpc_host) as channel:
@@ -170,8 +179,8 @@ class DispatchCenter():
     def update_queue(self):
         logging.info("Updating the host queue")
 
-        error_nodes = set(self.read_error_node())
-        all_hosts = set([client.host_name for client in self.clients])
+        error_nodes = set([host_name for host_name, _ in self.read_error_node()])
+        all_hosts = set([host_name for host_name in self.clients.keys()])
         queued_hosts = set(list(self.queue))
 
         hosts_to_add = all_hosts - error_nodes - queued_hosts
@@ -198,7 +207,7 @@ class DispatchCenter():
         if os.path.exists(self.error_node_records):
             with open(self.error_node_records) as f:
                 for line in f.readlines():
-                    host_name, host = line.split(',')
+                    host_name, host = line.strip('\n').split(',')
                     error_nodes.append((host_name, host))
         return error_nodes
 
