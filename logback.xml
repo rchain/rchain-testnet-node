@@ -29,7 +29,7 @@
     <destination>logstash.c.developer-222401.internal:4560</destination>
 	<encoder class="net.logstash.logback.encoder.LogstashEncoder" />
     <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-      <level>INFO</level>
+      <level>DEBUG</level>
     </filter>
   </appender>
 
