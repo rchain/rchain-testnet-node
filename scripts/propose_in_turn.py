@@ -22,6 +22,7 @@ servers:
       http_port: 40403
 waitTimeout: 300
 waitInterval: 10
+proposeInterval: 0
 error_node_records: /rchain/rchain-testnet-node/error.txt
 error_logs: /rchain/rchain-testnet-node/error.log
 deploy:
@@ -122,6 +123,7 @@ class DispatchCenter():
         self.wait_interval = int(config['waitInterval'])
 
         self.error_node_records = config['error_node_records']
+        self.propose_interval = int(config['proposeInterval'])
 
         self.init_queue()
 
@@ -221,6 +223,8 @@ class DispatchCenter():
         self._running = True
         while self._running:
             self.update_queue()
+            logging.info("Sleep {} seconds before proposing.".format(self.propose_interval))
+            time.sleep(self.propose_interval)
             block_hash = self.deploy_and_propose()
             wait(block_hash)
 
