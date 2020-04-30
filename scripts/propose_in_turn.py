@@ -91,6 +91,8 @@ class Client():
     def is_contain_block_hash(self, block_hash):
         with grpc.insecure_channel(self.grpc_host) as channel:
             client = RClient(channel)
+            if block_hash is None:
+                return False
             try:
                 client.show_block(block_hash)
                 return True
@@ -145,6 +147,7 @@ class DispatchCenter():
             return block_hash
         except Exception as e:
             logging.warning("Node {} can not deploy and propose because of {}".format(client.host_name, e))
+            return
 
     def wait_next_server_to_receive(self, block_hash):
         """return True when the next server receive the block hash"""
@@ -226,7 +229,10 @@ class DispatchCenter():
             logging.info("Sleep {} seconds before proposing.".format(self.propose_interval))
             time.sleep(self.propose_interval)
             block_hash = self.deploy_and_propose()
-            wait(block_hash)
+            if block_hash is None:
+                continue
+            else:
+                wait(block_hash)
 
 with open(args.config) as f:
     config = yaml.load(f)
