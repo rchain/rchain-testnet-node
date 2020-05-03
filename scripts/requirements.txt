@@ -4,9 +4,11 @@ eth-hash[pycryptodome]
 cryptography
 influxdb
 pyhocon
-pyjq
 natsort
 pyyaml
 websockets
 requests
-git+https://github.com/rchain/pyrchain@a1669067a5f71cc6e57317e7d345d473c7d35464
+pyrchain==0.3.7
+grpcio>=1.18.0
+grpcio-status>=1.18.0
+googleapis-common-protos>=1.5.5

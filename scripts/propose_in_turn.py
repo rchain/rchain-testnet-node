@@ -25,6 +25,9 @@ waitInterval: 10
 proposeInterval: 0
 error_node_records: /rchain/rchain-testnet-node/error.txt
 error_logs: /rchain/rchain-testnet-node/error.log
+keepalive: 10
+keepalive_timeout: 10
+max_propose_retry: 3
 deploy:
     contract: /rchain/rholang/examples/hello_world_again.rho
     phlo_limit: 100000
@@ -36,24 +39,24 @@ This script would take the orders node1 -> node2 -> node2 to propose block in or
 """
 
 import logging
-import asyncio
-import sys
 import os
-from argparse import ArgumentParser
-import yaml
-import grpc
+import sys
 import time
-from rchain.client import RClient, RClientException
-from rchain.crypto import PrivateKey
+from argparse import ArgumentParser
 from collections import deque
 
+import grpc
+import yaml
+from rchain.client import RClient, RClientException
+from rchain.crypto import PrivateKey
+
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 handler = logging.StreamHandler(sys.stdout)
+handler.setFormatter(formatter)
 handler.setLevel(logging.INFO)
 root = logging.getLogger()
 root.addHandler(handler)
 root.setLevel(logging.INFO)
-
-loop = asyncio.get_event_loop()
 
 parser = ArgumentParser(description="In turn propose script")
 parser.add_argument("-c", "--config-file", action="store", type=str, required=True, dest="config",
@@ -63,41 +66,85 @@ args = parser.parse_args()
 
 
 class Client():
-    def __init__(self, host, grpc_port, websocket_host, host_name):
+    def __init__(self, host, grpc_port, websocket_host, host_name, keepalive, keepalive_timeout):
         self.host = host
+        self.port = int(grpc_port)
         self.grpc_host = "{}:{}".format(host, grpc_port)
         self.websocket_host = "ws://{}:{}/ws/events".format(host, websocket_host)
         self.host_name = host_name
         self.asycn_ws = None
+        self.keepalive = int(keepalive * 1000)
+        self.keepalive_timeout = int(keepalive_timeout * 1000)
+        self.grpc_options = (
+            ('grpc.keepalive_time_ms', self.keepalive), ('grpc.keepalive_timeout_ms', self.keepalive_timeout),)
 
-    def deploy_and_propose(self, deploy_key, contract, phlo_price, phlo_limit):
-        with grpc.insecure_channel(self.grpc_host) as channel:
-            client = RClient(channel)
+    def deploy_and_propose(self, deploy_key, contract, phlo_price, phlo_limit, waitforPropose):
+        with RClient(self.host, self.port, self.grpc_options) as client:
             try:
-                return client.propose()
+                logging.info("Trying to propose directly. on {}".format(self.host_name))
+                blockhash= client.propose()
+                logging.info("Successfully propose directly {} on {}".format(blockhash, self.host_name))
+                return blockhash
             except RClientException as e:
-                logging.info("The node {} doesn't have new deploy. Going to deploy now".format(self.host_name))
                 error_message = e.args[0]
                 if "NoNewDeploys" in error_message:
-                    deploy_id = client.deploy_with_vabn_filled(deploy_key, contract, phlo_price,
-                                                               phlo_limit,
-                                                               int(time.time() * 1000))
-                    logging.info("Succefully deploy {}".format(deploy_id))
-                    return client.propose()
+                    logging.info("The node {} doesn't have new deploy. Going to deploy now".format(self.host_name))
+                    try:
+                        deploy_id = client.deploy_with_vabn_filled(deploy_key, contract, phlo_price,
+                                                                   phlo_limit,
+                                                                   int(time.time() * 1000))
+                        logging.info("Succefully deploy {}".format(deploy_id))
+                        logging.info("going to propose on {}".format(self.host_name))
+                        start = time.time()
+                        block_hash = client.propose()
+                        logging.info("Successfully propose {} done and it takes {} second on {}".format(block_hash,
+                                                                                                        time.time() - start,
+                                                                                                        self.host_name))
+                    except grpc.RpcError as e:
+                        logging.info(
+                            "Sleep {} and try again because :deploy and propose {} got grpc error: {}, {}".format(
+                                waitforPropose, self.host_name, e.details(),e.code()))
+                        time.sleep(waitforPropose)
+                        return self.deploy_and_propose(deploy_key, contract, phlo_price, phlo_limit, waitforPropose)
+                    return block_hash
+                elif "another propose in progress" in error_message:
+                    logging.info(
+                        "because there is anther process is proposing, wait {} seconds and propose again".format(
+                            waitforPropose))
+                    time.sleep(waitforPropose)
+                    return self.deploy_and_propose(deploy_key, contract, phlo_price, phlo_limit, waitforPropose)
+                elif "more blocks from other validators" in error_message:  # Must wait for more blocks from other validators
+                    logging.info("Must wait for more blocks from other validators on {}".format(self.host_name))
+                    logging.info("Skip propoing on {}".format(self.host_name))
+                    return
+                elif "Too far ahead of the last finalized" in error_message:  # Too far ahead of the last finalized block
+                    logging.info("Too far ahead of the last finalized block on {}".format(self.host_name))
+                    logging.info("Skip propoing on {}".format(self.host_name))
+                    return
                 else:
-                    raise e
-
+                    logging.error("unknown error on proposing {}: {}".format(self.host_name, e))
+                    sys.exit(1)
+            except grpc.RpcError as e:
+                logging.warning("Directly propose {} got grpc error: {}, {}".format(self.host_name, e.details(),
+                                                                                    e.code()))
+                return self.deploy_and_propose(deploy_key, contract, phlo_price, phlo_limit, waitforPropose)
+            except Exception as e:
+                logging.error("Unknown error: {}".format(e))
+                raise e
 
     def is_contain_block_hash(self, block_hash):
-        with grpc.insecure_channel(self.grpc_host) as channel:
-            client = RClient(channel)
+        with RClient(self.host, self.port, self.grpc_options) as client:
             if block_hash is None:
+                logging.error("The blockhash can not be None")
                 return False
             try:
                 client.show_block(block_hash)
                 return True
             except RClientException:
                 logging.info("node {} doesn't contain {}".format(self.host_name, block_hash))
+                return False
+            except grpc.RpcError as e:
+                logging.info("ShowBlock {} got grpc error: {}, {}".format(block_hash, e.details(), e.code()))
                 return False
 
 
@@ -108,9 +155,12 @@ class DispatchCenter():
         self._config = config
 
         self.clients = {}
+
+        self.keepalive = config['keepalive']
+        self.keepalive_timeout = config['keepalive_timeout']
         for server in config['servers']:
             for host_name, host_config in server.items():
-                self.clients[host_name] = init_client(host_name, host_config)
+                self.clients[host_name] = init_client(host_name, host_config, self.keepalive, self.keepalive_timeout)
 
         logging.info("Read the deploying contract {}".format(config['deploy']['contract']))
         with open(config['deploy']['contract']) as f:
@@ -142,12 +192,12 @@ class DispatchCenter():
         client = self.clients[current_server]
         try:
             self.queue.append(current_server)
-            block_hash = client.deploy_and_propose(self.deploy_key, self.contract, self.phlo_price, self.phlo_limit)
-            logging.info("Successfully deploy and propose {} in {}".format(block_hash, current_server))
+            block_hash = client.deploy_and_propose(self.deploy_key, self.contract, self.phlo_price, self.phlo_limit,
+                                                   self.wait_interval)
             return block_hash
         except Exception as e:
-            logging.warning("Node {} can not deploy and propose because of {}".format(client.host_name, e))
-            return
+            logging.error("Node {} can not deploy and propose because of {}".format(client.host_name, e))
+            sys.exit(1)
 
     def wait_next_server_to_receive(self, block_hash):
         """return True when the next server receive the block hash"""
@@ -234,12 +284,14 @@ class DispatchCenter():
             else:
                 wait(block_hash)
 
+
 with open(args.config) as f:
     config = yaml.load(f)
 
 
-def init_client(host_name, host_config):
-    return Client(host_config['host'], host_config['grpc_port'], host_config['http_port'], host_name)
+def init_client(host_name, host_config, keepalive, keepalive_timeout):
+    return Client(host_config['host'], host_config['grpc_port'], host_config['http_port'], host_name, keepalive,
+                  keepalive_timeout)
 
 
 if __name__ == '__main__':
