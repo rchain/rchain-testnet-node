@@ -8,7 +8,6 @@ from pathlib import Path
 from argparse import ArgumentParser
 from rchain.client import RClient
 from rchain.certificate import get_node_id_raw
-from rchain.crypto import
 from cryptography.hazmat.backends import default_backend
 from rchain.crypto import PrivateKey
 import hashlib
