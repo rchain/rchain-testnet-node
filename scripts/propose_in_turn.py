@@ -25,6 +25,7 @@ waitInterval: 10
 proposeInterval: 0
 error_node_records: /rchain/rchain-testnet-node/error.txt
 error_logs: /rchain/rchain-testnet-node/error.log
+pause_path: /rchain/pause.propose
 keepalive: 10
 keepalive_timeout: 10
 max_propose_retry: 3
@@ -82,7 +83,7 @@ class Client():
         with RClient(self.host, self.port, self.grpc_options) as client:
             try:
                 logging.info("Trying to propose directly. on {}".format(self.host_name))
-                blockhash= client.propose()
+                blockhash = client.propose()
                 logging.info("Successfully propose directly {} on {}".format(blockhash, self.host_name))
                 return blockhash
             except RClientException as e:
@@ -103,7 +104,7 @@ class Client():
                     except grpc.RpcError as e:
                         logging.info(
                             "Sleep {} and try again because :deploy and propose {} got grpc error: {}, {}".format(
-                                waitforPropose, self.host_name, e.details(),e.code()))
+                                waitforPropose, self.host_name, e.details(), e.code()))
                         time.sleep(waitforPropose)
                         return self.deploy_and_propose(deploy_key, contract, phlo_price, phlo_limit, waitforPropose)
                     return block_hash
@@ -176,6 +177,8 @@ class DispatchCenter():
 
         self.error_node_records = config['error_node_records']
         self.propose_interval = int(config['proposeInterval'])
+
+        self.pause_path = config['pause_path']
 
         self.init_queue()
 
@@ -266,6 +269,9 @@ class DispatchCenter():
                     error_nodes.append((host_name, host))
         return error_nodes
 
+    def pause_check(self):
+        return os.path.isfile(self.pause_path)
+
     def run(self):
         def wait(block_hash):
             if self.wait_next_server_to_receive(block_hash):
@@ -275,6 +281,12 @@ class DispatchCenter():
 
         self._running = True
         while self._running:
+            while self.pause_check():
+                logging.info(
+                    "The script found the pause file. The script will continue until the pause file {} is removed. Sleep {}".format(
+                        self.pause_path, self.wait_interval))
+                time.sleep(self.wait_interval)
+
             self.update_queue()
             logging.info("Sleep {} seconds before proposing.".format(self.propose_interval))
             time.sleep(self.propose_interval)
