@@ -271,7 +271,8 @@ mv /tmp/start-node.env $DIAG_DIR/
 
 docker_args=(
 	--name=rnode
-	--network=host
+	--network=rchain-net
+	-p 40400:40400 -p 40402:40402 -p 40404:40404 
 	-v /var/lib/rnode:/var/lib/rnode
 	-v $DIAG_DIR:$DIAG_DIR
 	-v /var/lib/rnode-static:/var/lib/rnode-static:ro
@@ -311,6 +312,12 @@ fi
 
 if [[ -f /var/lib/rnode-static/local.env ]]; then
 	source /var/lib/rnode-static/local.env
+fi
+
+# Create docker named bride if it doesn't exist
+docker_net="$(docker network ls|grep ' rchain-net ')"
+if [[ -z "$docker_net" ]]; then
+	docker network create rchain-net
 fi
 
 logcmd docker run -d \
