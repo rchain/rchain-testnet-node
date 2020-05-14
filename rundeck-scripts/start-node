@@ -315,7 +315,7 @@ if [[ -f /var/lib/rnode-static/local.env ]]; then
 fi
 
 # Create docker named bride if it doesn't exist
-docker_net="$(docker network ls -f name='rchain-net')"
+docker_net="$(docker network ls -q -f name='rchain-net')"
 if [[ -z "$docker_net" ]]; then
 	echo "Create docker named network"
 	docker network create rchain-net
