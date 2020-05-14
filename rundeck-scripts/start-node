@@ -320,6 +320,13 @@ if [[ -z "$docker_net" ]]; then
 	docker network create rchain-net
 fi
 
+# Provision nginx proxy if not already installed
+proxy_id="$(docker ps -q -f name=revproxy)"
+if [[ -n "$proxy_id" ]]; then
+	echo "Install nginx reverse proxy for gRPC & HTTPS"
+	provision_nginx_proxy.sh
+fi
+
 logcmd docker run -d \
 	${docker_args[@]}  \
 	"$RD_OPTION_RNODE_DOCKER_IMAGE" \
