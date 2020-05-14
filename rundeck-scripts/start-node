@@ -315,14 +315,15 @@ if [[ -f /var/lib/rnode-static/local.env ]]; then
 fi
 
 # Create docker named bride if it doesn't exist
-docker_net="$(docker network ls|grep ' rchain-net ')"
+docker_net="$(docker network ls -f name='rchain-net')"
 if [[ -z "$docker_net" ]]; then
+	echo "Create docker named network"
 	docker network create rchain-net
 fi
 
 # Provision nginx proxy if not already installed
 proxy_id="$(docker ps -q -f name=revproxy)"
-if [[ -n "$proxy_id" ]]; then
+if [[ -z "$proxy_id" ]]; then
 	echo "Install nginx reverse proxy for gRPC & HTTPS"
 	provision_nginx_proxy.sh
 fi
