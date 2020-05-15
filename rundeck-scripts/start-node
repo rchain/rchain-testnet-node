@@ -271,7 +271,8 @@ mv /tmp/start-node.env $DIAG_DIR/
 
 docker_args=(
 	--name=rnode
-	--network=host
+	--network=rchain-net
+	-p 40400:40400 -p 40402:40402 -p 40404:40404 
 	-v /var/lib/rnode:/var/lib/rnode
 	-v $DIAG_DIR:$DIAG_DIR
 	-v /var/lib/rnode-static:/var/lib/rnode-static:ro
@@ -313,6 +314,13 @@ if [[ -f /var/lib/rnode-static/local.env ]]; then
 	source /var/lib/rnode-static/local.env
 fi
 
+# Create docker named bride if it doesn't exist
+docker_net="$(docker network ls -q -f name='rchain-net')"
+if [[ -z "$docker_net" ]]; then
+	echo "Create docker named network"
+	docker network create rchain-net
+fi
+
 logcmd docker run -d \
 	${docker_args[@]}  \
 	"$RD_OPTION_RNODE_DOCKER_IMAGE" \
@@ -326,6 +334,13 @@ logcmd docker run -d \
 i=2
 sleep_time=5
 echo "Waiting $((i*sleep_time))s for RNode to start"
+
+# Provision nginx proxy if not already installed
+proxy_id="$(docker ps -q -f name=revproxy)"
+if [[ -z "$proxy_id" ]]; then
+	echo "Install nginx reverse proxy for gRPC & HTTPS"
+	provision_nginx_proxy.sh
+fi
 
 while (( i )); do
 	container_id="$(docker ps -q -f name=rnode)"
