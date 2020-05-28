@@ -72,6 +72,11 @@ else
             grpc_pass grpc://rnode:40401;
         }
     }
+    server {
+        listen 40403;
+        server_name ${HOST_NAME};
+        return 301 https://$host$request_uri;
+    }
 EOF
 fi
 
