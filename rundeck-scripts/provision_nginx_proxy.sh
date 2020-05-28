@@ -12,6 +12,14 @@ RNODE_LOG_DIR="/var/lib/rnode-diag/current/nginx"
 
 set -e
 
+if [[ ${HOST_NAME} =~ ".internal" ]]; then
+        if [ $# != 1 ]; then
+                echo "$0: Host has internal domain, run $0 with an external hostname"
+                exit 
+        fi
+        HOST_NAME=$1
+fi
+
 if [[ -d "/etc/letsencrypt/live/${HOST_NAME}" ]]; then
 	echo "$0: SSL certs detected, skipping certbot install & SSL certs provisioning."
 else
@@ -44,7 +52,16 @@ else
 		mkdir -p ${RNODE_LOG_DIR}
 	fi
 
+  # Build a nginx conf file
   cat <<EOF >${RNODE_NGINX_DIR}/reverse-proxy.conf
+    # Redirect all requests to port 40403(http api) to port 443(https api)
+    server {
+        listen 40403;
+        server_name ${HOST_NAME};
+        return 301 https://$host$request_uri;
+    }
+
+    # Proxy 443(https api) for docker internal address rnode:40403
     server {
         listen [::]:443 ssl ipv6only=on;
         listen 443 ssl;
@@ -59,6 +76,8 @@ else
         ssl_certificate /etc/letsencrypt/live/${HOST_NAME}/fullchain.pem;
         ssl_certificate_key /etc/letsencrypt/live/${HOST_NAME}/privkey.pem;
     }
+
+    # Proxy 40401(grpc external api) for docker's rnode:40401, primarily to capture api calls
     server {
         listen 40401 http2;
         access_log /var/log/nginx/access-grpc.log;
@@ -72,10 +91,22 @@ else
             grpc_pass grpc://rnode:40401;
         }
     }
+
+    # Proxy port 40405(grpcs) for port 40401(grpc) 
     server {
-        listen 40403;
-        server_name ${HOST_NAME};
-        return 301 https://$host$request_uri;
+        listen 40405 ssl http2;
+        access_log /var/log/nginx/access-grpcs.log;
+        error_log /var/log/nginx/error-grpcs.log;
+
+        # https://nginx.org/en/docs/http/ngx_http_grpc_module.html
+        grpc_read_timeout 3600s;
+        grpc_send_timeout 3600s;
+
+        location / {
+            grpc_pass grpc://rnode:40401;
+        }
+        ssl_certificate /etc/letsencrypt/live/${HOST_NAME}/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/${HOST_NAME}/privkey.pem;
     }
 EOF
 fi
@@ -87,7 +118,7 @@ if [[ -n "$docker_nginx" ]]; then
 fi
 
 docker run -d  --name revproxy --network rchain-net \
-	-p 443:443  -p 40401:40401 -p 40403:40403 \
+	-p 443:443  -p 40401:40401 -p 40403:40403 -p 40405:40405 \
 	-v ${RNODE_NGINX_DIR}:/etc/nginx/conf.d:ro \
 	-v /etc/letsencrypt:/etc/letsencrypt:ro \
 	-v ${RNODE_LOG_DIR}:/var/log/nginx \
