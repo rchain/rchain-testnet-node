@@ -1,3 +1,11 @@
+locals {
+   node_count   = "1"
+   region       = "us-east"
+   datacenter   = "wdc04"
+   pod          = "pod04"
+   domain_name  = "sandbox.rchain-dev.tk"
+}
+
 resource "ibm_compute_vm_instance" "tmpvm" {
   count                    = local.node_count
   hostname                 = "tmp${count.index}"
