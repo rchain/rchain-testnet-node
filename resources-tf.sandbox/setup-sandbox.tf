@@ -50,6 +50,5 @@ resource "ibm_compute_vm_instance" "sandbox" {
   public_security_group_ids  = [data.ibm_security_group.allow_in_rnode2.id,
                                 data.ibm_security_group.allow_ssh.id,
                                 data.ibm_security_group.allow_outbound.id]
-  #post_install_script_uri =  "https://raw.githubusercontent.com/rchain/rchain-testnet-node/dev/newinfra/setup-vm.sh"
-  post_install_script_uri =  "https://raw.githubusercontent.com/gsj5/rchain-testnet-node/gsj5_branch/newinfra/setup-vm.sh"
+  post_install_script_uri =  "https://raw.githubusercontent.com/rchain/rchain-testnet-node/dev/newinfra/setup-vm.sh"
 }
