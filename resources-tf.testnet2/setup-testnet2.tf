@@ -12,16 +12,11 @@ provider "ibm" {
 } 
   
 # Admin keys for root access
-data ibm_compute_ssh_key "sre"    	{ label = "rchain-sre-ibm" }
-data ibm_compute_ssh_key "gsj"    	{ label = "gsj-ibm-rsa" }
-data ibm_compute_ssh_key "nutzipper"    { label = "nutzipper-gcp" }
+data "ibm_compute_ssh_key" "sre"    	   { label = "rchain-sre-ibm" }
   
 data "ibm_security_group" "allow_in_rnode2"{ name = "allow_in_rnode2"}
 data "ibm_security_group" "allow_ssh"      { name = "allow_ssh" }
-data "ibm_security_group" "allow_http"     { name = "allow_http" }
-data "ibm_security_group" "allow_https"    { name = "allow_https" }
 data "ibm_security_group" "allow_outbound" { name = "allow_outbound" }
-data "ibm_security_group" "allow_in_rnode2"   { name = "allow_in_rnode2" }
 
 # Finally create some servers
 locals { testnet_list =[{hostname = "node0", datacenter = "lon04"},
@@ -39,15 +34,13 @@ resource "ibm_compute_vm_instance" "testnet" {
   datacenter            = local.testnet_list[count.index].datacenter
   os_reference_code     = "UBUNTU_LATEST"
   disks                 = ["250"]
-  local_disk            = false
-  ssh_key_ids              = [  data.ibm_compute_ssh_key.sre.id,
-  				data.ibm_compute_ssh_key.gsj.key.id,
-  				data.ibm_compute_ssh_key.nutzipper.id]
-  dedicated_acct_host_only = false
+  local_disk                 = false
+  dedicated_acct_host_only   = false
+  ssh_key_ids                = [data.ibm_compute_ssh_key.sre.id ]
   private_security_group_ids = [data.ibm_security_group.allow_ssh.id,
                                 data.ibm_security_group.allow_outbound.id]
-  public_security_group_ids=[   data.ibm_security_group.allow_in_rnode2.id,
+  public_security_group_ids  = [data.ibm_security_group.allow_in_rnode2.id,
                                 data.ibm_security_group.allow_ssh.id,
                                 data.ibm_security_group.allow_outbound.id]
-  post_install_script_uri =  "https://raw.githubusercontent.com/rchain/rchain-testnet-node/dev/newinfra/setup-vm.sh"
+  post_install_script_uri    = "https://raw.githubusercontent.com/rchain/rchain-testnet-node/dev/newinfra/setup-vm.sh"
 } 
