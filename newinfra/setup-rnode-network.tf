@@ -25,6 +25,24 @@ resource "ibm_security_group_rule" "allow_in_rnode_ports" {
     security_group_id = ibm_security_group.allow_in_rnode2.id
 }
 
+resource "ibm_security_group_rule" "allow_in_http" {
+    direction = "ingress"
+    ether_type = "IPv4"
+    port_range_min = 80
+    port_range_max = 80
+    protocol = "tcp"
+    security_group_id = ibm_security_group.allow_in_rnode2.id
+}
+
+resource "ibm_security_group_rule" "allow_in_https" {
+    direction = "ingress"
+    ether_type = "IPv4"
+    port_range_min = 443
+    port_range_max = 443
+    protocol = "tcp"
+    security_group_id = ibm_security_group.allow_in_rnode2.id
+}
+
 resource "ibm_security_group_rule" "allow_in_logstash" {
     direction = "ingress"
     ether_type = "IPv4"
