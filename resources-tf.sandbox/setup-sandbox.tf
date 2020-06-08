@@ -12,21 +12,16 @@ provider "ibm" {
 } 
   
 # Admin keys for root access
-data ibm_compute_ssh_key "sre"    	{ label = "rchain-sre-ibm" }
-data ibm_compute_ssh_key "gsj"    	{ label = "gsj-ibm-rsa" }
-data ibm_compute_ssh_key "nutzipper"    { label = "nutzipper-gcp" }
-  
+data "ibm_compute_ssh_key" "sre"    	   { label = "rchain-sre-ibm" }
+ 
 data "ibm_security_group" "allow_in_rnode2"{ name = "allow_in_rnode2"}
 data "ibm_security_group" "allow_ssh"      { name = "allow_ssh" }
-data "ibm_security_group" "allow_http"     { name = "allow_http" }
-data "ibm_security_group" "allow_https"    { name = "allow_https" }
 data "ibm_security_group" "allow_outbound" { name = "allow_outbound" }
 
 locals { 
    node_count   = "5"   
    region       = "us-east" 
    datacenter   = "wdc04" 
-   pod          = "bcr04" 
    #domain_name  = "sandbox.rchain.coop"
    domain_name  = "sandbox.rchain-dev.tk" 
 }
@@ -41,14 +36,12 @@ resource "ibm_compute_vm_instance" "sandbox" {
   os_reference_code        = "UBUNTU_LATEST"
   disks                    = ["250"]
   local_disk               = false
-  ssh_key_ids              = [  data.ibm_compute_ssh_key.sre.id,
-  				data.ibm_compute_ssh_key.gsj.id,
-  				data.ibm_compute_ssh_key.nutzipper.id]
-  dedicated_acct_host_only =    false
+  dedicated_acct_host_only = false
+  ssh_key_ids                = [data.ibm_compute_ssh_key.sre.id]
   private_security_group_ids = [data.ibm_security_group.allow_ssh.id,
                                 data.ibm_security_group.allow_outbound.id]
   public_security_group_ids  = [data.ibm_security_group.allow_in_rnode2.id,
                                 data.ibm_security_group.allow_ssh.id,
                                 data.ibm_security_group.allow_outbound.id]
-  post_install_script_uri =  "https://raw.githubusercontent.com/rchain/rchain-testnet-node/dev/newinfra/setup-vm.sh"
+  post_install_script_uri    = "https://raw.githubusercontent.com/rchain/rchain-testnet-node/dev/newinfra/setup-vm.sh"
 }
