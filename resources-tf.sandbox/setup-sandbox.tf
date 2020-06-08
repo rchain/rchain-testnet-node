@@ -22,8 +22,11 @@ locals {
    node_count   = "5"   
    region       = "us-east" 
    datacenter   = "wdc04" 
-   #domain_name  = "sandbox.rchain.coop"
-   domain_name  = "sandbox.rchain-dev.tk" 
+<<<<<<< HEAD
+   domain_name  = "sandbox.dev.rchain.coop"
+=======
+   domain_name  = "sandbox.rchain.coop"
+>>>>>>> 6289212558f26226ee962ae2cad506d46a39a0b1
 }
 
 # Finally create some servers
