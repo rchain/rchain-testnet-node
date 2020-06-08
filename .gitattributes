@@ -2,3 +2,4 @@
 /node-files*/rnode.conf.d/[6-7][0-9]-*.conf   filter=git-crypt diff=git-crypt
 /node-files*/node*/rnode.conf.d/9[0-9]-*.conf filter=git-crypt diff=git-crypt
 /node-files*/node*/node.key.pem               filter=git-crypt diff=git-crypt
+/ibmcloud/setup-users.sh	              filter=git-crypt diff=git-crypt
