@@ -1,6 +1,7 @@
 # Should be called via IBM Cloud Console Schematics
 # Docs @ https://cloud.ibm.com/docs/terraform?topic=terraform-infrastructure-resources
 
+# define supplied in terraform.tfvars or via IBM Schematic form submission
 variable "ibmcloud_api_key" {}
 variable "iaas_classic_username" {}
 variable "iaas_classic_api_key" {}
