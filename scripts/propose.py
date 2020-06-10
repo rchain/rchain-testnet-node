@@ -12,8 +12,7 @@ root.setLevel(logging.DEBUG)
 config_path = str(sys.argv[1])
 
 ret=0
-with grpc.insecure_channel('localhost:40402') as channel:
-    client = RClient(channel)
+with RClient('localhost', 40402) as client:
     try:
         start_time = time.time()
         client.propose()

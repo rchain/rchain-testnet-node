@@ -24,8 +24,7 @@ except:
     logging.error("The private you provided is not valid")
     sys.exit(1)
 
-with grpc.insecure_channel('localhost:40401') as channel:
-    client = RClient(channel)
-    vault = VaultAPI(client, private_key)
-    vault.transfer(from_addr=None, to_addr=args.receiver, amount=args.amount)
+with RClient('localhost', 40401) as client:
+    vault = VaultAPI(client)
+    vault.transfer(from_addr=private_key.get_public_key().get_rev_address(), to_addr=args.receiver, amount=args.amount, key=private_key)
     logging.info("Succeed transfer {} from {} to {} .".format(args.amount, private_key.get_public_key().get_rev_address(), args.receiver))
