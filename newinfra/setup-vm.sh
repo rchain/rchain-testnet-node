@@ -9,3 +9,7 @@ mkdir -p /rchain/rnode-static
 ln -s /rchain/rnode-static /var/lib/rnode-static
 mkdir -p /rchain/rnode-diag
 ln -s /rchain/rnode-diag /var/lib/rnode-diag
+
+# reset FQDN hostname to just its host's name.  Few rnode setup scripts expects this and makes it compatible with GCP
+_hostname="$(hostname)"
+hostnamectl set-hostname "${_hostname%%.*}"
