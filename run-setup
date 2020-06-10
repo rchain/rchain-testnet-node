@@ -20,7 +20,7 @@ apt install -y --no-install-recommends \
 	coreutils tree \
 	build-essential autoconf automake libtool \
 	python3 python3-venv python3-dev \
-	unzip graphviz subversion
+	unzip graphviz subversion certbot
 
 curl -sSfL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
 echo 'deb [arch=amd64] https://download.docker.com/linux/ubuntu cosmic stable' \
@@ -50,6 +50,11 @@ echo "influx_host: perf-bootstrap.c.developer-222401.internal" > scripts/scripts
 case "$PROFILE" in
 "sandboxnet")
     echo "influx_port: 8093" >> scripts/scripts.conf
+    ;;
+"sandbox")
+    # sandbox runs in IBM Cloud, hence needs external address.  Also, re-using devnet2 influxdb port!
+    echo "influx_host: perf-bootstrap.rchain-dev.tk" > scripts/scripts.conf
+    echo "influx_port: 8092" >> scripts/scripts.conf
     ;;
 "testnet")
     echo "influx_port: 8090" >> scripts/scripts.conf
@@ -136,9 +141,9 @@ mkdir -p /mnt/heapdumps || true
 install -d -m755 /usr/lib/systemd/system/
 install -C -m644 *.service *.timer *.mount -t /usr/lib/systemd/system/
 
-#Commenting out this line to make it work on IBM Cloud node
+#Commenting out this line to make it work on IBM Cloud node, for now
 #for unit in sync-diag.timer autopropose.service mnt-heapdumps.mount; do
-for unit in sync-diag.timer autopropose.service; do
+for unit in autopropose.service; do
 	unit_state=$(systemctl list-unit-files --no-legend $unit | awk '{print $2}')
 	if [[ $unit_state != masked* ]]; then
 		systemctl enable $unit
