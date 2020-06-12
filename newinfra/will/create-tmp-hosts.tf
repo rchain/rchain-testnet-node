@@ -24,7 +24,7 @@ resource "ibm_compute_vm_instance" "tmp-hosts" {
   hostname              = "will-tmp"
   domain                = "dev.rchain.coop"
   flavor_key_name       = "U1_4X8X25"
-  datacenter            = "fra05"
+  datacenter            = "hkg02"
   os_reference_code     = "UBUNTU_LATEST"
   disks                 = ["500"]
   local_disk                 = false
