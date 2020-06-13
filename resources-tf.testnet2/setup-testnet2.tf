@@ -33,7 +33,7 @@ resource "ibm_compute_vm_instance" "testnet" {
   flavor_key_name       = "U1_4X8X25"
   datacenter            = local.testnet_list[count.index].datacenter
   os_reference_code     = "UBUNTU_LATEST"
-  disks                 = ["250"]
+  disks                 = ["500"]
   local_disk                 = false
   dedicated_acct_host_only   = false
   ssh_key_ids                = [data.ibm_compute_ssh_key.sre.id ]
