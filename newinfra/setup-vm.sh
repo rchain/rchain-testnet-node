@@ -17,4 +17,4 @@ _hostname="$(hostname)"
 hostnamectl set-hostname "${_hostname%%.*}"
 
 # Create support & dev team accounts
-bash https://raw.githubusercontent.com/rchain/rchain-testnet-node/dev/newinfra/setup-users.sh
+curl https://raw.githubusercontent.com/rchain/rchain-testnet-node/dev/newinfra/setup-users.sh|bash
