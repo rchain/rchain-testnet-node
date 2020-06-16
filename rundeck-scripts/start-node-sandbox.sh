@@ -350,7 +350,9 @@ while (( i )); do
 
 		node_pid="$(docker inspect -f '{{.State.Pid}}' rnode || echo 0)"
 		if (( node_pid )); then
-			nohup $INSTALL_DIR/pmap.py "$node_pid" "perf-bootstrap.rchain-dev.tk" 8092 "$network_id" >/dev/null 2>&1 &
+			influx_host=$(grep influx_host /opt/rchain-testnet-node/scripts/scripts.conf | cut -d':' -f2)
+			influx_port=$(grep influx_port /opt/rchain-testnet-node/scripts/scripts.conf | cut -d':' -f2)
+			nohup $INSTALL_DIR/pmap.py "$node_pid" "$influx_host" "$influx_port" "$network_id" >/dev/null 2>&1 &
 		fi
 		break
 	fi
