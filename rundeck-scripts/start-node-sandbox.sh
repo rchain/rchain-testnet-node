@@ -292,7 +292,7 @@ launcher_args=(
 )
 
 run_args=(
-	--network "$network_id"
+	--network-id "$network_id"
 	$(get_rnode_run_args)
 )
 
