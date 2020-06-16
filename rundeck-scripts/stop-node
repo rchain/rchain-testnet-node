@@ -10,5 +10,6 @@ killall python3 || true
 logcmd docker stop rnode >/dev/null && docker rm rnode >/dev/null || true
 
 if [[ "$RD_OPTION_CLEAN_DATA" == yes ]]; then
-	logcmd rm -rf /var/lib/rnode
+	# Remove all files but retain the directory in cases where its linked to different drive
+	logcmd rm -rf /var/lib/rnode/*
 fi
