@@ -26,7 +26,7 @@
   </appender>
 
   <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
-    <destination>logstash.c.developer-222401.internal:4560</destination>
+    <destination>logstash.rchain-dev.tk:4560</destination>
 	<encoder class="net.logstash.logback.encoder.LogstashEncoder" />
     <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
       <level>DEBUG</level>

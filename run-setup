@@ -46,14 +46,12 @@ pip3 install -U -r requirements.txt
 popd >/dev/null
 
 # config file for python scripts
-echo "influx_host: perf-bootstrap.c.developer-222401.internal" > scripts/scripts.conf
+echo "influx_host: perf-bootstrap.rchain-dev.tk" > scripts/scripts.conf
 case "$PROFILE" in
 "sandboxnet")
     echo "influx_port: 8093" >> scripts/scripts.conf
     ;;
 "sandbox")
-    # sandbox runs in IBM Cloud, hence needs external address.  Also, re-using devnet2 influxdb port!
-    echo "influx_host: perf-bootstrap.rchain-dev.tk" > scripts/scripts.conf
     echo "influx_port: 8092" >> scripts/scripts.conf
     ;;
 "testnet")
@@ -69,9 +67,6 @@ node_dir=$network_dir/$(hostname)
 
 # Collect system stats.  Change hostname if hosted outside GCP
 install -C -m644 collectd.conf -t /etc/collectd/
-if [[ $PROFILE = "sandbox" ]]; then
-	sed -i "s/collectd-server.c.developer-222401.internal/collectd.rchain-dev.tk/" /etc/collectd/collectd.conf
-fi
 systemctl restart collectd
 
 if ! grep -Fq rundeck /root/.ssh/authorized_keys; then
@@ -93,11 +88,6 @@ install -C -m644 \
 	logback.xml \
 	$node_dir/node.certificate.pem \
 	-t /var/lib/rnode-static/
-
-# Change log servers hostname if hosted outside of GCP
-if [[ $PROFILE = "sandbox" ]]; then
-	sed -i "s/logstash.c.developer-222401.internal/logstash.rchain-dev.tk/" /var/lib/rnode-static/logback.xml
-fi
 
 rm -f /var/lib/rnode-static/validator-public-keys.txt
 
