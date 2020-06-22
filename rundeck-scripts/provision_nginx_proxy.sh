@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash 
 #
 # Enable HTTPS & gRPC reverse-proxy support for rnode
 # 1) If SSL certs don't exist, install `certbot` and get SSL certs.  Certbot runs standalone server on port 80, which should be open at the firewall.
@@ -92,9 +92,9 @@ else
         }
     }
 
-    # Proxy port 40405(grpcs) for port 40401(grpc) 
+    # Proxy port 40411(grpcs) for port 40401(grpc) 
     server {
-        listen 40405 ssl http2;
+        listen 40411 ssl http2;
         access_log /var/log/nginx/access-grpcs.log;
         error_log /var/log/nginx/error-grpcs.log;
 
@@ -117,9 +117,14 @@ if [[ -n "$docker_nginx" ]]; then
 	docker stop ${docker_nginx} && docker rm ${docker_nginx}
 fi
 
-docker run -d  --name revproxy --network rchain-net \
-	-p 443:443  -p 40401:40401 -p 40403:40403 -p 40405:40405 \
-	-v ${RNODE_NGINX_DIR}:/etc/nginx/conf.d:ro \
-	-v /etc/letsencrypt:/etc/letsencrypt:ro \
-	-v ${RNODE_LOG_DIR}:/var/log/nginx \
-	nginx
+echo "$0: Starting revproxy container..."
+if [[ "$RD_OPTION_CONFIG_V2" == yes ]]; then
+	(cd /var/lib/rnode;docker-compose up -d revproxy)
+else
+	docker run -d  --name revproxy --network rchain-net \
+		-p 443:443  -p 40401:40401 -p 40403:40403 -p 40411:40411 \
+		-v ${RNODE_NGINX_DIR}:/etc/nginx/conf.d:ro \
+		-v /etc/letsencrypt:/etc/letsencrypt:ro \
+		-v ${RNODE_LOG_DIR}:/var/log/nginx \
+		nginx
+fi
