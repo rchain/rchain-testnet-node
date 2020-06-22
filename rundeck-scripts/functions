@@ -144,10 +144,13 @@ get_rnode_run_args()
 	echo -n "$rnode_run_other_args"
 	print_cli_param --bootstrap rnode_server_bootstrap
 	print_cli_flag  --genesis-validator rnode_casper_genesis_validator
-	print_cli_param --kademlia-port rnode_server_port_kademlia
-	print_cli_param --port rnode_server_port
-	print_cli_param --required-sigs rnode_casper_required_signatures
 	print_cli_flag  --standalone rnode_server_standalone
+	# support old release settings
+	if [[ "$RD_OPTION_CONFIG_V2" == no ]]; then
+		print_cli_param --kademlia-port rnode_server_port_kademlia
+		print_cli_param --port rnode_server_port
+		print_cli_param --required-sigs rnode_casper_required_signatures
+	fi
 	echo
 }
 

@@ -162,6 +162,14 @@ rm $bonds_tmp
 
 merge_rnode_conf_fragments
 
+
+# Copy new version of rnode.conf and docker-compose.yml
+if [[ "$RD_OPTION_CONFIG_V2" == yes ]]; then
+	install -C -m600 /var/lib/rnode-static/rnode-v2.conf      -t /var/lib/rnode/
+	install -C -m600 /var/lib/rnode-static/kamon.conf         -t /var/lib/rnode/
+	install -C -m600 /var/lib/rnode-static/docker-compose.yml -t /var/lib/rnode/
+fi
+
 # Create rnode.redacted.conf with default permissions so that it's
 # accessible by nginx. umask should have world readable bit cleared.
 jq 'del(.rnode.server.casper."validator-private-key")' \
@@ -287,14 +295,23 @@ launcher_args=(
 	-XX:ErrorFile=$DIAG_DIR/hs_err.log
 	-XX:MaxJavaStackTraceDepth=100000
 	-Dlogback.configurationFile=/var/lib/rnode-static/logback.xml
-	-c /var/lib/rnode/rnode.conf
-	$(get_rnode_launcher_args)
 )
 
-run_args=(
-	--network "$network_id"
-	$(get_rnode_run_args)
-)
+# Old style config options
+if [[ "$RD_OPTION_CONFIG_V2" == no ]]; then
+        launcher_args+=(-c /var/lib/rnode/rnode.conf)
+fi
+
+launcher_args+=($(get_rnode_launcher_args))
+
+# New configs use slightly different option
+if [[ "$RD_OPTION_CONFIG_V2" == yes ]]; then
+	run_args=(--network-id "$network_id")
+else
+	run_args=(--network "$network_id")
+fi
+run_args+=( --host $rnode_server_host
+            $(get_rnode_run_args))
 
 if [[ $RD_OPTION_DEBUG == yes ]]; then
 	mkdir $DIAG_DIR/YourKit
@@ -314,20 +331,33 @@ if [[ -f /var/lib/rnode-static/local.env ]]; then
 	source /var/lib/rnode-static/local.env
 fi
 
-# Create docker named bride if it doesn't exist
-docker_net="$(docker network ls -q -f name='rchain-net')"
-if [[ -z "$docker_net" ]]; then
-	echo "Create docker named network"
-	docker network create rchain-net
+# new config also use docker-compose
+if [[ "$RD_OPTION_CONFIG_V2" == yes ]]; then
+	# Prepare a .env file for docker-compose
+        echo RNODE_DOCKER_IMAGE=$RD_OPTION_RNODE_DOCKER_IMAGE > /var/lib/rnode/.env
+        echo RNODE_LAUNCHER_ARGS=${launcher_args[@]}  >> /var/lib/rnode/.env
+        echo RNODE_RUN_ARGS=${run_args[@]}  >> /var/lib/rnode/.env
+
+	# Copy new config locally and add private key
+	if [[ ! -f /var/lib/rnode/rnode-new.conf ]]; then
+       		sed -i "s/# validator-private-key =/validator-private-key =$rnode_casper_validator_private_key/" /var/lib/rnode/rnode-v2.conf
+	fi
+	(cd /var/lib/rnode;logcmd docker-compose up -d rnode)
+else
+	# Create docker named bride if it doesn't exist
+	docker_net="$(docker network ls -q -f name='rchain-net')"
+	if [[ -z "$docker_net" ]]; then
+		echo "Create docker named network"
+		docker network create rchain-net
+	fi
+
+	logcmd docker run -d \
+		${docker_args[@]}  \
+		"$RD_OPTION_RNODE_DOCKER_IMAGE" \
+		${launcher_args[@]} \
+		run ${run_args[@]}
+		>/dev/null
 fi
-
-logcmd docker run -d \
-	${docker_args[@]}  \
-	"$RD_OPTION_RNODE_DOCKER_IMAGE" \
-	${launcher_args[@]} \
-	run ${run_args[@]}
-	>/dev/null
-
 # END docker run
 ######################################################################
 
@@ -350,9 +380,9 @@ while (( i )); do
 
 		node_pid="$(docker inspect -f '{{.State.Pid}}' rnode || echo 0)"
 		if (( node_pid )); then
-                       influx_host=$(grep influx_host /opt/rchain-testnet-node/scripts/scripts.conf | cut -d':' -f2)
-                       influx_port=$(grep influx_port /opt/rchain-testnet-node/scripts/scripts.conf | cut -d':' -f2)
-                       nohup $INSTALL_DIR/pmap.py "$node_pid" "$influx_host" "$influx_port" "$network_id" >/dev/null 2>&1 &
+			influx_host=$(grep influx_host /opt/rchain-testnet-node/scripts/scripts.conf | cut -d':' -f2)
+			influx_port=$(grep influx_port /opt/rchain-testnet-node/scripts/scripts.conf | cut -d':' -f2)
+			nohup $INSTALL_DIR/pmap.py "$node_pid" "$influx_host" "$influx_port" "$network_id" >/dev/null 2>&1 &
 		fi
 		break
 	fi

@@ -20,7 +20,7 @@ apt install -y --no-install-recommends \
 	coreutils tree \
 	build-essential autoconf automake libtool \
 	python3 python3-venv python3-dev \
-	unzip graphviz subversion certbot
+	unzip graphviz subversion certbot docker-compose
 
 curl -sSfL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
 echo 'deb [arch=amd64] https://download.docker.com/linux/ubuntu cosmic stable' \
@@ -46,14 +46,12 @@ pip3 install -U -r requirements.txt
 popd >/dev/null
 
 # config file for python scripts
-echo "influx_host: perf-bootstrap.c.developer-222401.internal" > scripts/scripts.conf
+echo "influx_host: perf-bootstrap.rchain-dev.tk" > scripts/scripts.conf
 case "$PROFILE" in
 "sandboxnet")
     echo "influx_port: 8093" >> scripts/scripts.conf
     ;;
 "sandbox")
-    # sandbox runs in IBM Cloud, hence needs external address.  Also, re-using devnet2 influxdb port!
-    echo "influx_host: perf-bootstrap.rchain-dev.tk" > scripts/scripts.conf
     echo "influx_port: 8092" >> scripts/scripts.conf
     ;;
 "testnet")
@@ -69,9 +67,6 @@ node_dir=$network_dir/$(hostname)
 
 # Collect system stats.  Change hostname if hosted outside GCP
 install -C -m644 collectd.conf -t /etc/collectd/
-if [[ $PROFILE = "sandbox" ]]; then
-	sed -i "s/collectd-server.c.developer-222401.internal/collectd.rchain-dev.tk/" /etc/collectd/collectd.conf
-fi
 systemctl restart collectd
 
 if ! grep -Fq rundeck /root/.ssh/authorized_keys; then
@@ -94,11 +89,6 @@ install -C -m644 \
 	$node_dir/node.certificate.pem \
 	-t /var/lib/rnode-static/
 
-# Change log servers hostname if hosted outside of GCP
-if [[ $PROFILE = "sandbox" ]]; then
-	sed -i "s/logstash.c.developer-222401.internal/logstash.rchain-dev.tk/" /var/lib/rnode-static/logback.xml
-fi
-
 rm -f /var/lib/rnode-static/validator-public-keys.txt
 
 for net_node_dir in $network_dir/node*; do
@@ -117,6 +107,11 @@ install -C -m600 \
 	$network_dir/rnode.conf.d/*.conf \
 	$node_dir/rnode.conf.d/*.conf \
 	-t /var/lib/rnode-static/rnode.conf.d/
+
+# Copy new version of rnode.conf and docker-compose.yml
+install -C -m600 $network_dir/rnode-v2.conf      -t /var/lib/rnode-static/
+install -C -m600 $network_dir/kamon.conf         -t /var/lib/rnode-static/
+install -C -m600 $network_dir/docker-compose.yml -t /var/lib/rnode-static/
 
 # User override rnode.conf. Broken link will just be ignored.
 ln -sf /var/lib/rnode/rnode.override.conf \
