@@ -1,0 +1,53 @@
+version: "3.5"
+
+services:
+  rnode:
+    image: $RNODE_DOCKER_IMAGE
+    user: root
+    networks:
+      - rchain-net
+    container_name: rnode
+    ports:
+      - 40400:40400
+      - 40402:40402
+      - 40404:40404
+      - 40405:40405
+# Pick up remaining args from docker-compose.env, created by rundeck-scripts/start-node
+    command: $RNODE_LAUNCHER_ARGS run -c /var/lib/rnode/rnode-v2.conf $RNODE_RUN_ARGS 
+    volumes:
+      - /var/lib/rnode/:/var/lib/rnode/
+      - /var/lib/rnode-diag/:/var/lib/rnode-diag/
+      - /var/lib/rnode-static/:/var/lib/rnode-static/:ro
+      - /opt/YourKit-JavaProfiler:/opt/YourKit-JavaProfiler:ro
+
+########################################################################
+  revproxy:
+    image: nginx
+    networks: 
+      - rchain-net
+    container_name: revproxy
+    ports:
+      - 443:443
+      - 40401:40401
+      - 40403:40403
+      - 40411:40411
+    volumes:
+      - /var/lib/rnode-static/nginx:/etc/nginx/conf.d:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/lib/rnode-diag/current/nginx:/var/log/nginx
+    restart: always
+
+########################################################################
+  logspout:
+    image: gliderlabs/logspout
+    container_name: logspout
+    ports:
+      - 8181:80
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: always
+
+########################################################################
+networks:
+  rchain-net:
+
