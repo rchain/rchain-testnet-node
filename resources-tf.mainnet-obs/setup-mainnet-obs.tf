@@ -27,7 +27,7 @@ resource "ibm_compute_vm_instance" "mainnet-obs" {
   count                 = length(local.vm_list)
   hostname              = local.vm_list[count.index].hostname
   domain                = "services.mainnet.rchain.coop"
-  flavor_key_name       = "U1_4X8X25"
+  flavor_key_name       = "B1_4X16X25"
   datacenter            = local.vm_list[count.index].datacenter
   os_reference_code     = "UBUNTU_LATEST"
   disks                 = ["500"]
