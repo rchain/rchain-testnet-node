@@ -58,7 +58,7 @@ else
     server {
         listen 40403;
         server_name ${HOST_NAME};
-        return 301 https://$host$request_uri;
+        return 301 https://\$host\$request_uri;
     }
 
     # Proxy 443(https api) for docker internal address rnode:40403
