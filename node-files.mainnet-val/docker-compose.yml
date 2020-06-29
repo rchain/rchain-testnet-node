@@ -18,13 +18,6 @@ services:
       -Dlogback.configurationFile=/var/lib/rnode-static/logback.xml 
       -J-Xms4g -J-Xmx11g
       run -c /var/lib/rnode/rnode-v2.conf
-      --host NODE.root-shard.mainnet.rchain.coop
-      --network-id mainnet 
-      --shard-name root
-      --bootstrap BOOTSTRAP
-      --fork-choice-stale-threshold 30minutes
-      --fork-choice-check-if-stale-interval 30minutes
-      --max-number-of-parents 1
       --api-max-blocks-limit=3
     volumes:
       - /var/lib/rnode/:/var/lib/rnode/
