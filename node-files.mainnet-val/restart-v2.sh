@@ -9,6 +9,8 @@ node=$1;
 RNODE_IMAGE=rchain/rnode:v0.9.25
 #BOOTSTRAP="rnode://191622c4b5f733ab4366d4cdb3f335126d744b17@node8.root-shard.mainnet.rchain.coop?protocol=40400&discovery=40404"
 BOOTSTRAP="rnode://487e2c0c519b450b61253dea0a23b4d184a50089@node0.root-shard.mainnet.rchain.coop?protocol=40400&discovery=40404"
+# escape all regex special characters, especially ampersand
+BOOTSTRAP="$(<<< "$BOOTSTRAP" sed -e 's`[][\\/.*^$&]`\\&`g')"
 
 # Check if the old config file exists?
 if [[ ! -f $node.rnode.conf ]]; then
