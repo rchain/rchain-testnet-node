@@ -1,0 +1,50 @@
+version: "3.5"
+
+services:
+  rnode:
+    image: RNODE_IMAGE
+    user: root
+    container_name: rnode
+    ports:
+      - 40400:40400
+      - 40402:40402
+      - 40404:40404
+    command: 
+      -XX:+HeapDumpOnOutOfMemoryError 
+      -XX:HeapDumpPath=/var/lib/rnode-diag/current/heapdump_OOM.hprof 
+      -XX:+ExitOnOutOfMemoryError 
+      -XX:ErrorFile=/var/lib/rnode-diag/current/hs_err.log 
+      -XX:MaxJavaStackTraceDepth=100000
+      -Dlogback.configurationFile=/var/lib/rnode-static/logback.xml 
+      -J-Xms4g -J-Xmx11g
+      run -c /var/lib/rnode/rnode-v2.conf
+      --api-max-blocks-limit=3
+    volumes:
+      - /var/lib/rnode/:/var/lib/rnode/
+      - /var/lib/rnode-diag/:/var/lib/rnode-diag/
+      - /var/lib/rnode-static/:/var/lib/rnode-static/:ro
+
+########################################################################
+  revproxy:
+    image: nginx
+    container_name: revproxy
+    ports:
+      - 443:443
+      - 40401:40401
+      - 40403:40403
+      - 40411:40411
+    volumes:
+      - /var/lib/rnode-static/nginx:/etc/nginx/conf.d:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/lib/rnode-diag/current/nginx:/var/log/nginx
+    restart: always
+
+########################################################################
+  logspout:
+    image: gliderlabs/logspout
+    container_name: logspout
+    ports:
+      - 8181:80
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: always
