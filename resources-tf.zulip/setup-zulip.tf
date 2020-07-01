@@ -25,7 +25,7 @@ locals {
 
 # Finally create some servers
 resource "ibm_compute_vm_instance" "zulip" {
-  hostname                 = "zulip
+  hostname                 = "zulip"
   domain                   = local.domain_name
   flavor_key_name          = "U1_2X4X100"
   datacenter               = local.datacenter
