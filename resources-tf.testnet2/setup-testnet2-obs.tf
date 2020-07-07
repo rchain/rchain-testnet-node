@@ -18,20 +18,11 @@ data "ibm_security_group" "allow_in_rnode2"{ name = "allow_in_rnode2"}
 data "ibm_security_group" "allow_ssh"      { name = "allow_ssh" }
 data "ibm_security_group" "allow_outbound" { name = "allow_outbound" }
 
-locals { 
-   node_count   = "5"   
-   region       = "eu-gb" 
-   datacenter   = "lon04" 
-   domain_name  = "testnet.dev.rchain.coop"
-}
-
-# Finally create some servers
-resource "ibm_compute_vm_instance" "testnet" {
-  count                    = local.node_count
-  hostname                 = "node${count.index}"
-  domain                   = local.domain_name
+resource "ibm_compute_vm_instance" "testnet-obs" {
+  hostname                 = "observer"
+  domain                   = "testnet.rchain.coop"
   flavor_key_name          = "B1_4X16X25"
-  datacenter               = local.datacenter
+  datacenter               = "wdc07"
   os_reference_code        = "UBUNTU_LATEST"
   disks                    = ["500"]
   local_disk               = false
