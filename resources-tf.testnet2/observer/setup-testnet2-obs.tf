@@ -21,7 +21,7 @@ data "ibm_security_group" "allow_outbound" { name = "allow_outbound" }
 resource "ibm_compute_vm_instance" "testnet-obs" {
   hostname                 = "observer"
   domain                   = "testnet.rchain.coop"
-  flavor_key_name          = "B1_4X16X25"
+  flavor_key_name          = "B1_4X16X100"
   datacenter               = "wdc07"
   os_reference_code        = "UBUNTU_LATEST"
   disks                    = ["500"]
