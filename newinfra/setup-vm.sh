@@ -18,3 +18,6 @@ hostnamectl set-hostname "${_hostname%%.*}"
 
 # Create support & dev team accounts
 curl https://raw.githubusercontent.com/rchain/rchain-testnet-node/dev/newinfra/setup-users.sh|bash
+
+# Bring the new server up to date
+apt update && DEBIAN_FRONTEND=noninteractive apt -y upgrade
