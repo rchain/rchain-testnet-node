@@ -48,14 +48,17 @@ popd >/dev/null
 # config file for python scripts
 echo "influx_host: perf-bootstrap.rchain-dev.tk" > scripts/scripts.conf
 case "$PROFILE" in
-"sandboxnet")
-    echo "influx_port: 8093" >> scripts/scripts.conf
+"testnet")
+    echo "influx_port: 8090" >> scripts/scripts.conf
+    ;;
+"devnet")
+    echo "influx_port: 8091" >> scripts/scripts.conf
     ;;
 "sandbox")
     echo "influx_port: 8092" >> scripts/scripts.conf
     ;;
-"testnet")
-    echo "influx_port: 8090" >> scripts/scripts.conf
+"sandboxnet")
+    echo "influx_port: 8093" >> scripts/scripts.conf
     ;;
 *)
     ;;

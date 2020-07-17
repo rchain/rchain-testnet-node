@@ -112,7 +112,7 @@ parse_rnode_run_args()
 			-g|--genesis-validator) rnode_casper_genesis_validator=true ;;
 			--kademlia-port) rnode_server_port_kademlia="$2"; shift ;;
 			-p|--port) rnode_server_port="$2"; shift ;;
-			-r|--required-sigs) rnode_casper_required_signatures="$2"; shift ;;
+			-r|--required-sigs|--required-signatures) rnode_casper_required_signatures="$2"; shift ;;
 			-s|--standalone) rnode_server_standalone=true ;;
 			*) rnode_run_other_args+=" ${1@Q}" ;;
 		esac
@@ -135,7 +135,9 @@ print_cli_flag()
 get_rnode_launcher_args()
 {
 	echo -n "$rnode_launcher_other_args"
-	print_cli_param --grpc-port rnode_grpc_port_external
+	if [[ "$RD_OPTION_CONFIG_V2" == no ]]; then
+		print_cli_param --grpc-port rnode_grpc_port_external
+	fi
 	echo
 }
 
@@ -146,7 +148,9 @@ get_rnode_run_args()
 	print_cli_flag  --genesis-validator rnode_casper_genesis_validator
 	print_cli_flag  --standalone rnode_server_standalone
 	# support old release settings
-	if [[ "$RD_OPTION_CONFIG_V2" == no ]]; then
+	if [[ "$RD_OPTION_CONFIG_V2" == yes ]]; then
+		print_cli_param  --required-signatures rnode_casper_required_signatures
+	else
 		print_cli_param --kademlia-port rnode_server_port_kademlia
 		print_cli_param --port rnode_server_port
 		print_cli_param --required-sigs rnode_casper_required_signatures
