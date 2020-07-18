@@ -13,6 +13,7 @@ provider "ibm" {
   
 # Admin keys for root access
 data "ibm_compute_ssh_key" "sre"    	   { label = "rchain-sre-ibm" }
+data "ibm_compute_ssh_key" "rundeck"   	   { label = "rchain-sre-rundeck" }
  
 data "ibm_security_group" "allow_in_rnode2"{ name = "allow_in_rnode2"}
 data "ibm_security_group" "allow_ssh"      { name = "allow_ssh" }
@@ -26,7 +27,8 @@ locals {
 }
 
 # Finally create some servers
-resource "ibm_compute_vm_instance" "testnet" {
+resource "ibm_compute_vm_instance" "devnet" {
+  tags                     = "devnet"
   count                    = local.node_count
   hostname                 = "node${count.index}"
   domain                   = local.domain_name
@@ -36,7 +38,7 @@ resource "ibm_compute_vm_instance" "testnet" {
   disks                    = ["500"]
   local_disk               = false
   dedicated_acct_host_only = false
-  ssh_key_ids                = [data.ibm_compute_ssh_key.sre.id]
+  ssh_key_ids                = [data.ibm_compute_ssh_key.sre.id, data.ibm_compute_ssh_key.rundeck.id]
   private_security_group_ids = [data.ibm_security_group.allow_ssh.id,
                                 data.ibm_security_group.allow_outbound.id]
   public_security_group_ids  = [data.ibm_security_group.allow_in_rnode2.id,
