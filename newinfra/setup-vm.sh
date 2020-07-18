@@ -18,3 +18,31 @@ hostnamectl set-hostname "${_hostname%%.*}"
 
 # Create support & dev team accounts
 curl https://raw.githubusercontent.com/rchain/rchain-testnet-node/dev/newinfra/setup-users.sh|bash
+
+# Make sure we don't conflict with apt.systemd.daily while bringing the system up to date
+
+mask_services='apt-daily apt-daily-upgrade'
+stop_services='unattended-upgrades'
+
+cleanup()
+{
+        systemctl unmask $mask_services
+        systemctl isolate default
+}
+trap cleanup EXIT
+
+systemctl mask $mask_services
+systemctl stop $stop_services
+
+echo -n "$0:Waiting for following services to finish: $mask_services... "
+while systemctl is-active $mask_services >/dev/null 2>&1; do
+        sleep 1
+done
+echo "Done!"
+
+export DEBIAN_FRONTEND=noninteractive
+apt update -q 
+apt -y upgrade
+
+echo "$0:Script done!"
+
