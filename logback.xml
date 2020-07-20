@@ -4,6 +4,8 @@
     <resetJUL>true</resetJUL>
   </contextListener>
 
+  <shutdownHook/>
+
   <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
 
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
@@ -17,11 +19,19 @@
   </appender>
 
   <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-    <file>${rnode.data.dir}/rnode.log</file>
-    <append>true</append>
+	<file>/var/lib/rnode-diag/current/rnode.log</file>
+    <append>false</append>
     <encoder>
       <pattern>%d{ISO8601, UTC} [%-5level{5}] [%-20.20thread{30}] [%-29.29logger{29}]- %msg%n </pattern>
     </encoder>
+  </appender>
+
+  <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+    <destination>logstash.rchain-dev.tk:4560</destination>
+	<encoder class="net.logstash.logback.encoder.LogstashEncoder" />
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <level>DEBUG</level>
+    </filter>
   </appender>
 
   <logger name="coop.rchain.shared.EventLogger" level="OFF" />
@@ -34,6 +44,7 @@
   <root level="debug">
     <appender-ref ref="STDOUT" />
     <appender-ref ref="FILE" />
+    <appender-ref ref="LOGSTASH" />
   </root>
 
 </configuration>
