@@ -5,7 +5,7 @@ After=network.target
 What=heapdumps.bucket.rchain-dev.tk
 Where=/mnt/heapdumps
 Type=gcsfuse
-Options=_netdev,limit_ops_per_sec=-1,key_file=/root/heapdumps-access-developer-222401-dd77d48e137e.json,--temp-dir=/rchain/tmp
+Options=_netdev,limit_ops_per_sec=-1,key_file=/root/heapdumps-access-developer-222401-dd77d48e137e.json,temp_dir=/rchain/tmp
 
 [Install]
 WantedBy=multi-user.target
