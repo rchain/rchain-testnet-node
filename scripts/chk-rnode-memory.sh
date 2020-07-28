@@ -2,6 +2,8 @@
 #
 #  Script checks if rnode memory exceeds MEM_THRESHOLD %, and if it does, forces jvm to run full garabage collection
 #
+set -e
+
 # Redirect all outout to syslog and stderr
 exec 1> >(logger -s -t $(basename $0)) 2>&1
 
