@@ -51,6 +51,9 @@ case "$PROFILE" in
 "testnet")
     echo "influx_port: 8090" >> scripts/scripts.conf
     ;;
+"testnet-dev")
+    echo "influx_port: 8091" >> scripts/scripts.conf
+    ;;
 "devnet")
     echo "influx_port: 8091" >> scripts/scripts.conf
     ;;
