@@ -4,6 +4,8 @@
 #
 set -e
 
+apt -y install openjdk-11-jdk-headless bc
+
 mkdir -p /opt/rchain/scripts
 curl -o /opt/rchain/scripts/chk-rnode-memory.sh https://raw.githubusercontent.com/rchain/rchain-testnet-node/dev/scripts/chk-rnode-memory.sh
 chmod +x /opt/rchain/scripts/chk-rnode-memory.sh
