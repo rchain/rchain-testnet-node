@@ -152,7 +152,8 @@ install -d -m755 /usr/lib/systemd/system/
 install -C -m644 *.service *.timer *.mount -t /usr/lib/systemd/system/
 
 # mnt-heapdumps.mount expects GCP service account key-file with heapdumps bucket access is in /root
-for unit in sync-diag.timer autopropose.service mnt-heapdumps.mount; do
+#for unit in sync-diag.timer autopropose.service mnt-heapdumps.mount; do
+for unit in sync-diag.timer mnt-heapdumps.mount; do
 	unit_state=$(systemctl list-unit-files --no-legend $unit | awk '{print $2}')
 	if [[ $unit_state != masked* ]]; then
 		systemctl enable $unit
