@@ -112,10 +112,11 @@ if [[ -n "$GIT_CRYPT_KEY_FILE" ]]; then
 fi
 
 # Install Cron job
+# disable cron...causes more deadache then it adds value!
 
-if [[ ! $cron_symlink -ef update-run-setup ]]; then
-	ln -sf $REPO_DIR/update-run-setup $cron_symlink
-fi
+#if [[ ! $cron_symlink -ef update-run-setup ]]; then
+	#ln -sf $REPO_DIR/update-run-setup $cron_symlink
+#fi
 
 # Run main setup script exclusively
 
