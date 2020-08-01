@@ -2,7 +2,7 @@ version: "3.5"
 
 services:
   rnode:
-    image: rchain/rnode:v0.9.25
+    image: rchain/rnode:v0.9.25.1
     user: root
     container_name: rnode
     ports:
@@ -14,9 +14,9 @@ services:
       -XX:+ExitOnOutOfMemoryError 
       -XX:ErrorFile=/var/lib/rnode-diag/current/hs_err.log 
       -Dlogback.configurationFile=/var/lib/rnode-static/logback.xml 
-      -J-Xms4g -J-Xmx12g
+      -J-Xms4g -J-Xmx14g
       run 
-      --host ${HOST_NAME}.services.mainnet.rchain.coop
+      --host ${HOST_NAME}
       --network-id mainnet 
       --shard-name root
       --bootstrap rnode://487e2c0c519b450b61253dea0a23b4d184a50089@node0.root-shard.mainnet.rchain.coop?protocol=40400&discovery=40404
