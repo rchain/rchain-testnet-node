@@ -13,11 +13,16 @@ ln -s /rchain/rnode /var/lib/rnode
 ln -s /rchain/rnode-static /var/lib/rnode-static
 ln -s /rchain/rnode-diag /var/lib/rnode-diag
 
-# reset FQDN hostname to just its host's name.  Few rnode setup scripts expects this and makes it compatible with GCP
-_hostname="$(hostname)"
-hostnamectl set-hostname "${_hostname%%.*}"
+# Add domain name
+sed -i "s/$/.root-shard.mainnet.rchain.coop/" /etc/hostname
 
-export DEBIAN_FRONTEND=noninteractive
+# Setup garabage collection cron job
+mkdir -p /opt/rchain/scripts
+curl -o /opt/rchain/scripts/chk-rnode-memory.sh https://raw.githubusercontent.com/rchain/rchain-testnet-node/dev/scripts/chk-rnode-memory.sh
+ln -sf  /opt/rchain/scripts/chk-rnode-memory.sh /etc/cron.hourly/chk-rnode-memory
+
+curl -o /etc/collectd/collectd.conf  https://raw.githubusercontent.com/rchain/rchain-testnet-node/dev/collectd.conf
+curl -o /var/lib/rnode-static/logback.xml https://raw.githubusercontent.com/rchain/rchain-testnet-node/dev/logback.xml
 
 echo "$0:Script done!"
 
