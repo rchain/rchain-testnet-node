@@ -16,7 +16,7 @@ services:
       -XX:ErrorFile=/var/lib/rnode-diag/current/hs_err.log 
       -XX:MaxJavaStackTraceDepth=100000
       -Dlogback.configurationFile=/var/lib/rnode-static/logback.xml 
-      -J-Xmx11g
+      -J-Xmx14g
       run -c /var/lib/rnode/rnode-v2.conf
       --api-max-blocks-limit=3
     volumes:
