@@ -52,7 +52,7 @@ resource "ibm_is_instance" "vm1" {
 		name	= "eth0"
 		subnet	= ibm_is_subnet.subnet1[count.index % local.zones].id
 		port_speed	= "1000"
-		security_groups = [ ibm_is_security_group.allow-in-rnode.id ]
+		security_groups = [ ibm_is_security_group.allow-in-rnode.id, ibm_is_security_group.restrict-in-rnode.id ]
 	}
 }
 
