@@ -112,6 +112,12 @@ resource "ibm_is_security_group" "allow-in-rnode" {
 	resource_group	= data.ibm_resource_group.res_grp.id
 }
 
+resource "ibm_is_security_group" "restrict-in-rnode" {
+	name		= "${var.resource_group}-${var.region}-restrict-in-rnode-sg"
+	vpc		= ibm_is_vpc.vpc1.id
+	resource_group	= data.ibm_resource_group.res_grp.id
+}
+
 resource "ibm_is_security_group_rule" "allow_out_all" {
 	group	  = ibm_is_security_group.allow-in-rnode.id
 	remote	  = "0.0.0.0/0"
@@ -128,13 +134,203 @@ resource "ibm_is_security_group_rule" "allow_in_icmp" {
 	}
 }
 
-resource "ibm_is_security_group_rule" "allow_in_rnode_ports1" {
-	group	  = ibm_is_security_group.allow-in-rnode.id
+resource "ibm_is_security_group_rule" "restrict01" {
+	group	  = ibm_is_security_group.restrict-in-rnode.id
 	direction = "inbound"
-	remote	  = "0.0.0.0/0"
+	remote	  = "35.189.203.83"
 	tcp {
 		port_min = 40400
-		port_max = 40401
+		port_max = 40411
+	}
+}
+
+resource "ibm_is_security_group_rule" "restrict02" {
+	group	  = ibm_is_security_group.restrict-in-rnode.id
+	direction = "inbound"
+	remote	  = "34.76.146.225"
+	tcp {
+		port_min = 40400
+		port_max = 40411
+	}
+}
+
+resource "ibm_is_security_group_rule" "restrict3" {
+	group	  = ibm_is_security_group.restrict-in-rnode.id
+	direction = "inbound"
+	remote	  = "35.195.88.187"
+	tcp {
+		port_min = 40400
+		port_max = 40411
+	}
+}
+
+resource "ibm_is_security_group_rule" "restrict4" {
+	group	  = ibm_is_security_group.restrict-in-rnode.id
+	direction = "inbound"
+	remote	  = "35.190.222.161"
+	tcp {
+		port_min = 40400
+		port_max = 40411
+	}
+}
+
+resource "ibm_is_security_group_rule" "restrict5" {
+	group	  = ibm_is_security_group.restrict-in-rnode.id
+	direction = "inbound"
+	remote	  = "35.205.181.71"
+	tcp {
+		port_min = 40400
+		port_max = 40411
+	}
+}
+
+resource "ibm_is_security_group_rule" "restrict6" {
+	group	  = ibm_is_security_group.restrict-in-rnode.id
+	direction = "inbound"
+	remote	  = "34.77.43.236"
+	tcp {
+		port_min = 40400
+		port_max = 40411
+	}
+}
+
+resource "ibm_is_security_group_rule" "restrict7" {
+	group	  = ibm_is_security_group.restrict-in-rnode.id
+	direction = "inbound"
+	remote	  = "35.187.0.49"
+	tcp {
+		port_min = 40400
+		port_max = 40411
+	}
+}
+
+resource "ibm_is_security_group_rule" "restrict8" {
+	group	  = ibm_is_security_group.restrict-in-rnode.id
+	direction = "inbound"
+	remote	  = "34.77.204.43"
+	tcp {
+		port_min = 40400
+		port_max = 40411
+	}
+}
+
+resource "ibm_is_security_group_rule" "restrict9" {
+	group	  = ibm_is_security_group.restrict-in-rnode.id
+	direction = "inbound"
+	remote	  = "34.76.192.90"
+	tcp {
+		port_min = 40400
+		port_max = 40411
+	}
+}
+
+resource "ibm_is_security_group_rule" "restrict10" {
+	group	  = ibm_is_security_group.restrict-in-rnode.id
+	direction = "inbound"
+	remote	  = "158.175.176.20"
+	tcp {
+		port_min = 40400
+		port_max = 40411
+	}
+}
+
+resource "ibm_is_security_group_rule" "restrict11" {
+	group	  = ibm_is_security_group.restrict-in-rnode.id
+	direction = "inbound"
+	remote	  = "158.177.4.127"
+	tcp {
+		port_min = 40400
+		port_max = 40411
+	}
+}
+
+resource "ibm_is_security_group_rule" "restrict12" {
+	group	  = ibm_is_security_group.restrict-in-rnode.id
+	direction = "inbound"
+	remote	  = "52.116.124.146"
+	tcp {
+		port_min = 40400
+		port_max = 40411
+	}
+}
+
+resource "ibm_is_security_group_rule" "restrict13" {
+	group	  = ibm_is_security_group.restrict-in-rnode.id
+	direction = "inbound"
+	remote	  = "169.63.182.53"
+	tcp {
+		port_min = 40400
+		port_max = 40411
+	}
+}
+
+resource "ibm_is_security_group_rule" "restrict14" {
+	group	  = ibm_is_security_group.restrict-in-rnode.id
+	direction = "inbound"
+	remote	  = "52.117.126.243"
+	tcp {
+		port_min = 40400
+		port_max = 40411
+	}
+}
+
+resource "ibm_is_security_group_rule" "restrict15" {
+	group	  = ibm_is_security_group.restrict-in-rnode.id
+	direction = "inbound"
+	remote	  = "52.116.140.87"
+	tcp {
+		port_min = 40400
+		port_max = 40411
+	}
+}
+
+resource "ibm_is_security_group_rule" "restrict16" {
+	group	  = ibm_is_security_group.restrict-in-rnode.id
+	direction = "inbound"
+	remote	  = "52.116.192.139"
+	tcp {
+		port_min = 40400
+		port_max = 40411
+	}
+}
+
+resource "ibm_is_security_group_rule" "restrict17" {
+	group	  = ibm_is_security_group.restrict-in-rnode.id
+	direction = "inbound"
+	remote	  = "52.117.13.136"
+	tcp {
+		port_min = 40400
+		port_max = 40411
+	}
+}
+
+resource "ibm_is_security_group_rule" "restrict18" {
+	group	  = ibm_is_security_group.restrict-in-rnode.id
+	direction = "inbound"
+	remote	  = "162.133.140.33"
+	tcp {
+		port_min = 40400
+		port_max = 40411
+	}
+}
+
+resource "ibm_is_security_group_rule" "restrict19" {
+	group	  = ibm_is_security_group.restrict-in-rnode.id
+	direction = "inbound"
+	remote	  = "128.168.132.19"
+	tcp {
+		port_min = 40400
+		port_max = 40411
+	}
+}
+
+resource "ibm_is_security_group_rule" "restrict20" {
+	group	  = ibm_is_security_group.restrict-in-rnode.id
+	direction = "inbound"
+	remote	  = "165.192.132.19"
+	tcp {
+		port_min = 40400
+		port_max = 40411
 	}
 }
 
@@ -148,15 +344,15 @@ resource "ibm_is_security_group_rule" "allow_in_rnode_propose" {
     }
 }
 
-resource "ibm_is_security_group_rule" "allow_in_rnode_ports2" {
-	group	  = ibm_is_security_group.allow-in-rnode.id
-	remote	  = "0.0.0.0/0"
-	direction = "inbound"
-	tcp {
-		port_min = 40403
-		port_max = 40411
-	}
-}
+#resource "ibm_is_security_group_rule" "allow_in_rnode_ports2" {
+	#group	  = ibm_is_security_group.allow-in-rnode.id
+	#remote	  = "0.0.0.0/0"
+	#direction = "inbound"
+	#tcp {
+		#port_min = 40403
+		#port_max = 40411
+	#}
+#}
 
 resource "ibm_is_security_group_rule" "allow_in_http" {
 	group      = ibm_is_security_group.allow-in-rnode.id
@@ -168,15 +364,15 @@ resource "ibm_is_security_group_rule" "allow_in_http" {
 	}
 }
 
-resource "ibm_is_security_group_rule" "allow_in_https" {
-	group	  = ibm_is_security_group.allow-in-rnode.id
-	direction = "inbound"
-	remote	  = "0.0.0.0/0"
-	tcp {
-	        port_min = 443
-		port_max = 443
-	}
-}
+#resource "ibm_is_security_group_rule" "allow_in_https" {
+	#group	  = ibm_is_security_group.allow-in-rnode.id
+	#direction = "inbound"
+	#remote	  = "0.0.0.0/0"
+	#tcp {
+	        #port_min = 443
+		#port_max = 443
+	#}
+#}
 
 resource "ibm_is_security_group_rule" "allow_in_logview" {
 	group	  = ibm_is_security_group.allow-in-rnode.id
