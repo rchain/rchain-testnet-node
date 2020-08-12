@@ -1,5 +1,5 @@
 #!/bin/bash
-# Usage: ./restart.sh node0
+# Usage: ./restart.sh 00
 # Invoke inside folder with secrets
 #
 # 1) Fetch docker-compose.yml, modify with rnode docker image and push it to the mainnet
@@ -15,35 +15,37 @@ BOOTSTRAP="$(<<< "$BOOTSTRAP" sed -e 's`[][\\/.*^$&]`\\&`g')"
 KEY_FILE="mainnet-val.dat"
 
 if [[ $# -eq 0 ]] ; then
-    echo "$0: Missing node number"
+    echo "$0: Missing node number.  Usage: ./restart.sh 00"
     exit 1
 fi
 
+# Check if the arguement is number only
 fmt='^[0-9]+$'
 if ! [[ $1 =~ $fmt ]] ; then
-    echo "$0: Arguement has to be a number (i.e. 00 or 12)"
+    echo "$0: Arguement <$1> has to be a number (i.e. 00 or 12)"
     exit 1
 fi
 
 if [[ ! -f $KEY_FILE ]]; then
-	echo "$0: Missing keys data file"
+	echo "$0: Missing keys <$KEY_FILE> file"
 	exit 1
 fi
 
+# Convert number to base 10 and remove any leading 0
 node="node$((10#$1))"
 
 # Update docker-compose.yml with rnode image and move it to the mainnet server
 if [[ ! -f docker-compose.yml ]]; then
 	wget https://raw.githubusercontent.com/rchain/rchain-testnet-node/dev/node-files.mainnet-val/docker-compose.yml
 	sed -i "s+RNODE_IMAGE+$RNODE_IMAGE+" docker-compose.yml
-	scp docker-compose.yml root@$node.root-shard.mainnet.rchain.coop:/var/lib/rnode
 fi
+scp docker-compose.yml root@$node.root-shard.mainnet.rchain.coop:/var/lib/rnode
 
 # Update config file and move it to the mainnet server
 if [[ ! -f $node.rnode-v2.conf ]]; then
 	PRIV_KEY=`grep $1 $KEY_FILE | awk '{print $2}'`
 	if [[ -z $PRIV_KEY ]] ; then
-		echo "$0: Missing key for <$node>"
+		echo "$0: Missing key for <$node> in <$KEY_FILE>"
 		exit 1
 	fi
      
@@ -52,7 +54,7 @@ if [[ ! -f $node.rnode-v2.conf ]]; then
 	sed -i "s+NODE_HOST+$node+" $node.rnode-v2.conf
 fi
 
-sed -i "s+BOOTSTRAP+$BOOTSTRAP+" $node.rnode-v2.conf
+sed -i 's+protocol-client.bootstrap.*$+protocol-client.bootstrap = "$BOOTSTRAP"+' $node.rnode-v2.conf
 
 scp $node.rnode-v2.conf root@$node.root-shard.mainnet.rchain.coop:/var/lib/rnode/rnode-v2.conf
 
