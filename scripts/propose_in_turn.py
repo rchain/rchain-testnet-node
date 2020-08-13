@@ -112,8 +112,7 @@ class Client():
                     logging.info(
                         "because casper is running, wait {} seconds and propose again".format(
                             waitforPropose))
-                    time.sleep(waitforPropose)
-                    return self.deploy_and_propose(deploy_key, contract, phlo_price, phlo_limit, waitforPropose)
+                    return
                 elif "another propose in progress" in error_message:
                     logging.info(
                         "because there is anther process is proposing, wait {} seconds and propose again".format(
