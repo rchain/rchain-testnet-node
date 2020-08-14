@@ -23,11 +23,12 @@ servers:
 waitTimeout: 300
 waitInterval: 10
 proposeInterval: 0
-valid_offset: 0
+error_node_records: /rchain/rchain-testnet-node/error.txt
 error_logs: /rchain/rchain-testnet-node/error.log
 pause_path: /rchain/pause.propose
 keepalive: 10
 keepalive_timeout: 10
+valid_offset: -40
 max_propose_retry: 3
 deploy:
     contract: /rchain/rholang/examples/hello_world_again.rho
@@ -80,15 +81,6 @@ class Client():
         self.grpc_options = (
             ('grpc.keepalive_time_ms', self.keepalive), ('grpc.keepalive_timeout_ms', self.keepalive_timeout),)
 
-        self.latest_message = None
-
-    def get_lastest_block_hash(self):
-        with RClient(self.host, self.port, self.grpc_options) as client:
-            latest_blocks = client.show_blocks(1)
-            # TODO consider situation multiple blocks in the same block number
-            self.latest_message = latest_blocks[0].blockHash
-            return self.latest_message
-
     def deploy_and_propose(self, deploy_key, contract, phlo_price, phlo_limit, waitforPropose):
         with RClient(self.host, self.port, self.grpc_options) as client:
             try:
@@ -107,7 +99,7 @@ class Client():
                             latest_block = latest_blocks[0]
                             latest_block_num = latest_block.blockNumber
                             deploy_id = client.deploy(deploy_key, contract, phlo_price, phlo_limit,
-                                                      latest_block_num + self.valid_offset,timestamp)
+                                                      latest_block_num + self.valid_offset, timestamp)
                         else:
                             deploy_id = client.deploy_with_vabn_filled(deploy_key, contract, phlo_price,
                                                                        phlo_limit,
@@ -124,15 +116,29 @@ class Client():
                             "Sleep {} and try again because :deploy and propose {} got grpc error: {}, {}".format(
                                 waitforPropose, self.host_name, e.details(), e.code()))
                         time.sleep(waitforPropose)
-                        return
+                        return self.deploy_and_propose(deploy_key, contract, phlo_price, phlo_limit, waitforPropose)
                     return block_hash
+                elif "another propose in progress" in error_message:
+                    logging.info(
+                        "because there is anther process is proposing, wait {} seconds and propose again".format(
+                            waitforPropose))
+                    time.sleep(waitforPropose)
+                    return self.deploy_and_propose(deploy_key, contract, phlo_price, phlo_limit, waitforPropose)
+                elif "more blocks from other validators" in error_message:  # Must wait for more blocks from other validators
+                    logging.info("Must wait for more blocks from other validators on {}".format(self.host_name))
+                    logging.info("Skip propoing on {}".format(self.host_name))
+                    return
+                elif "Too far ahead of the last finalized" in error_message:  # Too far ahead of the last finalized block
+                    logging.info("Too far ahead of the last finalized block on {}".format(self.host_name))
+                    logging.info("Skip propoing on {}".format(self.host_name))
+                    return
                 else:
                     logging.error("unknown error on proposing {}: {}".format(self.host_name, e))
-                    return
+                    sys.exit(1)
             except grpc.RpcError as e:
                 logging.warning("Directly propose {} got grpc error: {}, {}".format(self.host_name, e.details(),
                                                                                     e.code()))
-                return
+                return self.deploy_and_propose(deploy_key, contract, phlo_price, phlo_limit, waitforPropose)
             except Exception as e:
                 logging.error("Unknown error: {}".format(e))
                 raise e
@@ -166,8 +172,7 @@ class DispatchCenter():
         self.valid_offset = config['valid_offset']
         for server in config['servers']:
             for host_name, host_config in server.items():
-                self.clients[host_name] = init_client(host_name, host_config, self.keepalive, self.keepalive_timeout,
-                                                      self.valid_offset)
+                self.clients[host_name] = init_client(host_name, host_config, self.keepalive, self.keepalive_timeout, self.valid_offset)
 
         logging.info("Read the deploying contract {}".format(config['deploy']['contract']))
         with open(config['deploy']['contract']) as f:
@@ -181,6 +186,7 @@ class DispatchCenter():
         self.wait_timeout = int(config['waitTimeout'])
         self.wait_interval = int(config['waitInterval'])
 
+        self.error_node_records = config['error_node_records']
         self.propose_interval = int(config['proposeInterval'])
 
         self.pause_path = config['pause_path']
@@ -188,21 +194,6 @@ class DispatchCenter():
         self.init_queue()
 
         self._running = False
-
-    def get_latest_blocks_from_every_one(self):
-        latest_blocks = {}
-        for key, value in self.clients.items():
-            latest_hash = value.get_lastest_block_hash()
-            assert latest_hash
-            latest_blocks[key] = latest_hash
-            logging.info("Checked node {} latest mes is {}".format(key, latest_hash))
-        return latest_blocks
-
-    def make_sure_every_one_on_the_same_page(self):
-        latest_blocks = self.get_latest_blocks_from_every_one()
-        set_blockHash = set([i for i in latest_blocks.values()])
-        logging.info("Checking every node is on the same page {}".format(set_blockHash))
-        return len(set_blockHash) == 1
 
     def setup_error_log(self, path):
         handler = logging.FileHandler(path)
@@ -220,50 +211,84 @@ class DispatchCenter():
             return block_hash
         except Exception as e:
             logging.error("Node {} can not deploy and propose because of {}".format(client.host_name, e))
+            sys.exit(1)
 
-    def wait_next_server_to_be_different(self, block_hash):
+    def wait_next_server_to_receive(self, block_hash):
         """return True when the next server receive the block hash"""
         current_time = int(time.time())
         wait_server = self.queue.popleft()
         client = self.clients[wait_server]
-        logging.info("Waiting {} to be different from last block hash {} at {}".format(client.host_name, block_hash,
-                                                                                       current_time))
-        while 1:
+        logging.info("Waiting {} to receive {} at {}".format(client.host_name, block_hash, current_time))
+        while time.time() - current_time < self.wait_timeout:
             try:
                 time.sleep(self.wait_interval)
-                latest_block = client.get_lastest_block_hash()
-                is_different = latest_block != block_hash
-                if is_different:
-                    logging.info(
-                        "Node {} successfully receive new block hash {} from {}".format(client.host_name, latest_block,
-                                                                                        block_hash))
+                is_contain = client.is_contain_block_hash(block_hash)
+                if is_contain:
+                    logging.info("Node {} successfully receive block hash {}".format(client.host_name, block_hash))
                     self.queue.appendleft(wait_server)
-                    return latest_block
+                    return True
                 else:
                     logging.info(
-                        "Node {} does not have new block hash from {}. Sleep {} s and try again".format(
-                            client.host_name,
-                            block_hash,
-                            self.wait_interval))
+                        "Node {} does not have block hash {}. Sleep {} s and try again".format(client.host_name,
+                                                                                               block_hash,
+                                                                                               self.wait_interval))
             except Exception as e:
                 logging.error(
                     "There is something wrong with node {}, exception {}".format(client.host_name, e))
-                sys.exit(1)
+                break
+        logging.error("Timeout waiting {} to receive {} at {}".format(client.host_name, block_hash, time.time()))
+        self.write_error_node(client)
+        return False
 
     def init_queue(self):
         self.queue = deque()
         for client in self.clients.values():
             self.queue.append(client.host_name)
 
+    def update_queue(self):
+        logging.info("Updating the host queue")
+
+        error_nodes = set([host_name for host_name, _ in self.read_error_node()])
+        all_hosts = set([host_name for host_name in self.clients.keys()])
+        queued_hosts = set(list(self.queue))
+
+        hosts_to_add = all_hosts - error_nodes - queued_hosts
+        hosts_to_remove = error_nodes & queued_hosts
+        logging.info("The host {} is going to remove in the queue".format(hosts_to_remove))
+        logging.info("The host {} is going to add in the queue".format(hosts_to_add))
+
+        for host in hosts_to_add:
+            self.queue.append(host)
+
+        for host in hosts_to_remove:
+            self.queue.remove(host)
+
+    def write_error_node(self, client):
+        error_nodes = self.read_error_node()
+        error_nodes.append((client.host_name, client.host))
+        with open(self.error_node_records, 'w') as f:
+            for host_name, host in error_nodes:
+                f.write("{},{}\n".format(host_name, host))
+        return error_nodes
+
+    def read_error_node(self):
+        error_nodes = []
+        if os.path.exists(self.error_node_records):
+            with open(self.error_node_records) as f:
+                for line in f.readlines():
+                    host_name, host = line.strip('\n').split(',')
+                    error_nodes.append((host_name, host))
+        return error_nodes
+
     def pause_check(self):
         return os.path.isfile(self.pause_path)
 
     def run(self):
-        while not self.make_sure_every_one_on_the_same_page():
-            logging.info("every is not on the same page, check in {}".format(self.wait_interval))
-            time.sleep(self.wait_interval)
-
-        last_block_hash = list(self.clients.values())[0].get_lastest_block_hash()
+        def wait(block_hash):
+            if self.wait_next_server_to_receive(block_hash):
+                return
+            else:
+                wait(block_hash)
 
         self._running = True
         while self._running:
@@ -273,15 +298,18 @@ class DispatchCenter():
                         self.pause_path, self.wait_interval))
                 time.sleep(self.wait_interval)
 
+            self.update_queue()
             logging.info("Sleep {} seconds before proposing.".format(self.propose_interval))
             time.sleep(self.propose_interval)
-            self.deploy_and_propose()
-            last_block_hash = self.wait_next_server_to_be_different(last_block_hash)
+            block_hash = self.deploy_and_propose()
+            if block_hash is None:
+                continue
+            else:
+                wait(block_hash)
 
 
 with open(args.config) as f:
     config = yaml.load(f)
-
 
 def init_client(host_name, host_config, keepalive, keepalive_timeout, valid_offset):
     return Client(host_config['host'], host_config['grpc_port'], host_config['http_port'], host_name, keepalive,
