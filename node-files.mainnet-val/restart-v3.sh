@@ -7,12 +7,12 @@
 set -e
 
 # When changing RNODE_IMAGE, remove local docker-compose.yml file so new version is downloaded
-RNODE_IMAGE=rchain/rnode:v0.9.25.1
+RNODE_IMAGE=rchain/rnode:v0.9.25.1.1
 #BOOTSTRAP="rnode://191622c4b5f733ab4366d4cdb3f335126d744b17@node8.root-shard.mainnet.rchain.coop?protocol=40400&discovery=40404"
 BOOTSTRAP="rnode://487e2c0c519b450b61253dea0a23b4d184a50089@node0.root-shard.mainnet.rchain.coop?protocol=40400&discovery=40404"
 # escape all regex special characters, especially ampersand
 BOOTSTRAP="$(<<< "$BOOTSTRAP" sed -e 's`[][\\/.*^$&]`\\&`g')"
-KEY_FILE="mainnet-val.dat"
+KEY_FILE="/home/ian/Documents/RChain/Epoch2-IBM/mainnet-val.dat"
 
 if [[ $# -eq 0 ]] ; then
     echo "$0: Missing node number.  Usage: ./restart.sh 00"
@@ -43,7 +43,7 @@ scp docker-compose.yml root@$node.root-shard.mainnet.rchain.coop:/var/lib/rnode
 
 # Update config file and move it to the mainnet server
 if [[ ! -f $node.rnode-v2.conf ]]; then
-	PRIV_KEY=`grep $1 $KEY_FILE | awk '{print $2}'`
+	PRIV_KEY=`grep "^$1" $KEY_FILE | awk '{print $3}'`
 	if [[ -z $PRIV_KEY ]] ; then
 		echo "$0: Missing key for <$node> in <$KEY_FILE>"
 		exit 1
@@ -54,16 +54,12 @@ if [[ ! -f $node.rnode-v2.conf ]]; then
 	sed -i "s+NODE_HOST+$node+" $node.rnode-v2.conf
 fi
 
-sed -i 's+protocol-client.bootstrap.*$+protocol-client.bootstrap = "$BOOTSTRAP"+' $node.rnode-v2.conf
+sed -i "s+protocol-client.bootstrap.*$+protocol-client.bootstrap = \"$BOOTSTRAP\"+" $node.rnode-v2.conf
 
 scp $node.rnode-v2.conf root@$node.root-shard.mainnet.rchain.coop:/var/lib/rnode/rnode-v2.conf
 
+#"docker stop rnode && docker rm rnode \
+#&& \
 # Run rnode via docker-compose
 ssh root@$node.root-shard.mainnet.rchain.coop \
-"docker stop rnode && docker rm rnode \
-&& \
-(cd /var/lib/rnode;docker-compose up -d rnode) \
-&& \
-sleep 5 \
-&& \
-rm /var/lib/rnode/rnode-v2.conf"
+"docker stop rnode && (cd /var/lib/rnode;docker-compose up -d rnode) && rm /var/lib/rnode/rnode-v2.conf"
