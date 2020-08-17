@@ -39,7 +39,7 @@ resource "ibm_is_vpc" "vpc1" {
 
 resource "ibm_is_instance" "vm1" {
 	count	= length(local.vm_list)
-	name	= ${local.vm_list[count.index]}
+	name	= local.vm_list[count.index]
 	vpc	= ibm_is_vpc.vpc1.id
 	zone	= "${local.region}-${count.index % local.zones + 1}"
 	profile	= local.vm_profile
