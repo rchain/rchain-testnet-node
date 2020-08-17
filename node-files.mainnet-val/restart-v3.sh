@@ -12,7 +12,7 @@ RNODE_IMAGE=rchain/rnode:v0.9.25.1.1
 BOOTSTRAP="rnode://487e2c0c519b450b61253dea0a23b4d184a50089@node0.root-shard.mainnet.rchain.coop?protocol=40400&discovery=40404"
 # escape all regex special characters, especially ampersand
 BOOTSTRAP="$(<<< "$BOOTSTRAP" sed -e 's`[][\\/.*^$&]`\\&`g')"
-KEY_FILE="/home/ian/Documents/RChain/Epoch2-IBM/mainnet-val.dat"
+KEY_FILE="~/Documents/RChain/Epoch2-IBM/mainnet-val.dat"
 
 if [[ $# -eq 0 ]] ; then
     echo "$0: Missing node number.  Usage: ./restart.sh 00"
