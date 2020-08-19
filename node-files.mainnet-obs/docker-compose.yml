@@ -14,7 +14,8 @@ services:
       -XX:+ExitOnOutOfMemoryError 
       -XX:ErrorFile=/var/lib/rnode-diag/current/hs_err.log 
       -Dlogback.configurationFile=/var/lib/rnode-static/logback.xml 
-      -J-Xms4g -J-Xmx14g
+      -XX:MaxRAMPercentage=75
+      -XX:MaxDirectMemorySize=1g
       run 
       --host ${HOST_NAME}
       --network-id mainnet 
@@ -22,7 +23,7 @@ services:
       --bootstrap rnode://487e2c0c519b450b61253dea0a23b4d184a50089@node0.root-shard.mainnet.rchain.coop?protocol=40400&discovery=40404
       --finalization-rate 1
       --fault-tolerance-threshold -1
-      --synchrony-constraint-threshold 0
+      --synchrony-constraint-threshold 0.99
       --max-number-of-parents 1
       --api-max-blocks-limit=100
       --api-enable-reporting
