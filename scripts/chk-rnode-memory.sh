@@ -7,7 +7,7 @@ set -e
 # Redirect all outout to syslog and stderr
 exec 1> >(logger -s -t $(basename $0)) 2>&1
 
-MEM_THRESHOLD=85.0
+MEM_THRESHOLD=75.0
 MEM_USED=$(docker stats --no-stream --format "{{.MemPerc}}" rnode|sed -e 's/%//')
 MEM_LIMIT=$(echo "$MEM_USED > $MEM_THRESHOLD"|bc -l)
 
