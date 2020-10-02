@@ -11,8 +11,8 @@ PAUSE_SCRIPT_FILE="/opt/rchain/scripts/PAUSE_SCRIPT_monitor_mainnet"
 SCRIPT_NAME=$(basename $0)
 CURL_TIMEOUT=5
 TIME_THRESHOLD=300
-	   #observer-eu.services.mainnet.rchain.coop     \
 OBSERVERS="observer-asia.services.mainnet.rchain.coop   \
+	   observer-eu.services.mainnet.rchain.coop     \
 	   observer-us.services.mainnet.rchain.coop     \
 	   observer-exch2.services.mainnet.rchain.coop"
 
