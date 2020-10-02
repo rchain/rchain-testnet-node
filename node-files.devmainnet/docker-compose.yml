@@ -1,0 +1,139 @@
+version: "2.3"
+services:
+  devmainnet-observer1-lfs:
+    mem_limit: 16g
+    image: tgrospic/rnode:v0.9.26-beta
+    #image: rchain/rnode:v0.9.25.4
+    user: root
+    container_name: devmainnet-observer1-lfs
+    ports:
+      - 40400:40400
+      - 40404:40404
+    command:
+      -XX:+HeapDumpOnOutOfMemoryError
+      -XX:HeapDumpPath=/var/lib/rnode-diag/current/heapdump_OOM.hprof
+      -XX:+ExitOnOutOfMemoryError
+      -XX:ErrorFile=/var/lib/rnode-diag/current/hs_err.log
+      -Dlogback.configurationFile=/var/lib/rnode-static/logback.xml
+      -XX:MaxRAMPercentage=75
+      -XX:MaxDirectMemorySize=1g
+      run
+      --host observer1-lfs.devmainnet.dev.rchain.coop
+      --network-id mainnet
+      --shard-name root
+      --bootstrap rnode://487e2c0c519b450b61253dea0a23b4d184a50089@node0.root-shard.mainnet.rchain.coop?protocol=40400&discovery=40404
+      --finalization-rate 1
+      --fault-tolerance-threshold -1
+      --synchrony-constraint-threshold 0.99
+      --max-number-of-parents 1
+      --api-max-blocks-limit=100
+      --api-enable-reporting
+      --fork-choice-stale-threshold 30minutes
+      --fork-choice-check-if-stale-interval 30minutes
+    volumes:
+      - /rchain/devmainnet/observer1-lfs/rnode/:/var/lib/rnode/
+      - /rchain/devmainnet/observer1-lfs/rnode-diag/:/var/lib/rnode-diag/
+      - /rchain/devmainnet/observer1-lfs/rnode-static/:/var/lib/rnode-static/:ro
+########################################################################
+  devmainnet-observer2-lfs:
+    mem_limit: 16g
+#    image: nuttzipper/rnode:lfs
+    image: tgrospic/rnode:v0.9.26-beta
+    user: root
+    container_name: devmainnet-observer2-lfs
+    ports:
+      - 41400:41400
+      - 41404:41404
+      - 127.0.0.1:9998:9998
+    command:
+      -XX:+HeapDumpOnOutOfMemoryError
+      -XX:HeapDumpPath=/var/lib/rnode-diag/current/heapdump_OOM.hprof
+      -XX:+ExitOnOutOfMemoryError
+      -XX:ErrorFile=/var/lib/rnode-diag/current/hs_err.log
+      -Dlogback.configurationFile=/var/lib/rnode-static/logback.xml
+      -XX:MaxRAMPercentage=75
+      -XX:MaxDirectMemorySize=3g
+      run
+      --protocol-max-connections 1
+      --host observer2-lfs.devmainnet.dev.rchain.coop
+      --protocol-port 41400 --discovery-port 41404
+      --network-id mainnet
+      --shard-name root
+      --bootstrap rnode://6bc6147763d868959a0363042fba6493aced5cb6@observer1-lfs.devmainnet.dev.rchain.coop?protocol=40400&discovery=40404
+      --finalization-rate 1
+      --fault-tolerance-threshold -1
+      --synchrony-constraint-threshold 0.99
+      --max-number-of-parents 1
+      --api-max-blocks-limit=100
+      --api-enable-reporting
+      --fork-choice-stale-threshold 30minutes
+      --fork-choice-check-if-stale-interval 30minutes
+      -Dcom.sun.management.jmxremote.port=9999
+      -Dcom.sun.management.jmxremote.rmi.port=9999
+      -Dcom.sun.management.jmxremote.local.only=false
+      -Dcom.sun.management.jmxremote.authenticate=false
+      -Dcom.sun.management.jmxremote.ssl=false
+      -Djava.rmi.server.hostname=localhost
+    volumes:
+      - /rchain/devmainnet/observer2-lfs/rnode/:/var/lib/rnode/
+      - /rchain/devmainnet/observer2-lfs/rnode-diag/:/var/lib/rnode-diag/
+      - /rchain/devmainnet/observer2-lfs/rnode-static/:/var/lib/rnode-static/:ro
+########################################################################
+  devmainnet-observer3-lfs:
+    mem_limit: 16g
+    image: tgrospic/rnode:v0.9.26-beta
+    user: root
+    container_name: devmainnet-observer3-lfs
+    ports:
+      - 42400:42400
+      - 42404:42404
+      - 127.0.0.1:9997:9997
+    command:
+      -XX:+HeapDumpOnOutOfMemoryError
+      -XX:HeapDumpPath=/var/lib/rnode-diag/current/heapdump_OOM.hprof
+      -XX:+ExitOnOutOfMemoryError
+      -XX:ErrorFile=/var/lib/rnode-diag/current/hs_err.log
+      -Dlogback.configurationFile=/var/lib/rnode-static/logback.xml
+      -XX:MaxRAMPercentage=75
+      -XX:MaxDirectMemorySize=3g
+      run
+      --protocol-max-connections 1
+      --host observer3-lfs.devmainnet.dev.rchain.coop
+      --protocol-port 42400 --discovery-port 42404
+      --network-id mainnet
+      --shard-name root
+      --bootstrap rnode://3183840fbcd29a07d70e838328f2a6a55cd7befe@observer2-lfs.devmainnet.dev.rchain.coop?protocol=41400&discovery=41404
+      --finalization-rate 1
+      --fault-tolerance-threshold -1
+      --synchrony-constraint-threshold 0.99
+      --max-number-of-parents 1
+      --api-max-blocks-limit=100
+      --api-enable-reporting
+      --fork-choice-stale-threshold 30minutes
+      --fork-choice-check-if-stale-interval 30minutes
+      -Dcom.sun.management.jmxremote.port=9998
+      -Dcom.sun.management.jmxremote.rmi.port=9998
+      -Dcom.sun.management.jmxremote.local.only=false
+      -Dcom.sun.management.jmxremote.authenticate=false
+      -Dcom.sun.management.jmxremote.ssl=false
+      -Djava.rmi.server.hostname=localhost
+    volumes:
+      - /rchain/devmainnet/observer3-lfs/rnode/:/var/lib/rnode/
+      - /rchain/devmainnet/observer3-lfs/rnode-diag/:/var/lib/rnode-diag/
+      - /rchain/devmainnet/observer3-lfs/rnode-static/:/var/lib/rnode-static/:ro
+
+########################################################################
+  devmainnet-revproxy:
+    image: nginx
+    container_name: devmainnet-revproxy
+    ports:
+      - 443:443
+      - 40401:40401
+      - 40403:40403
+      - 40411:40411
+    volumes:
+      - /rchain/devmainnet/revproxy/conf:/etc/nginx/conf.d:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /rchain/devmainnet/revproxy/log:/var/log/nginx
+    restart: always
+
