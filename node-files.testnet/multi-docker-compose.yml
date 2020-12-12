@@ -1,0 +1,208 @@
+version: "2.3"
+
+services:
+  testnet-node0:
+    mem_limit: 8g
+    image: rchain/rnode:v0.9.25.7
+    user: root
+    container_name: node0
+    ports:
+      - 40400:40400
+      - 40402:40402
+      - 40404:40404
+    command:
+      -XX:+HeapDumpOnOutOfMemoryError
+      -XX:HeapDumpPath=/var/lib/rnode-diag/current/heapdump_OOM.hprof
+      -XX:+ExitOnOutOfMemoryError
+      -XX:ErrorFile=/var/lib/rnode-diag/current/hs_err.log
+      -Dlogback.configurationFile=/var/lib/rnode-static/logback.xml
+      -XX:MaxRAMPercentage=75
+      -XX:MaxDirectMemorySize=1g
+      run
+      -c /var/lib/rnode/rnode-v2.conf
+      --host node0.testnet.rchain.coop
+      --network-id testnet02032020
+      --shard-name rchain
+      --bootstrap rnode://25a48e34b10c5917aa21bdbbf45da56d3e7129c6@node0.testnet.rchain-dev.tk?protocol=40400&discovery=40404
+      --finalization-rate 1
+      --fault-tolerance-threshold -1
+      --synchrony-constraint-threshold 0.99
+      --max-number-of-parents 1
+      --api-max-blocks-limit=3
+    volumes:
+      - /rchain/node0/rnode/:/var/lib/rnode/
+      - /rchain/node0/rnode-diag/:/var/lib/rnode-diag/
+      - /rchain/node0/rnode-static/:/var/lib/rnode-static/:ro
+
+########################################################################
+  testnet-node1:
+    mem_limit: 8g
+    image: rchain/rnode:v0.9.25.6-rc
+    user: root
+    container_name: node1
+    ports:
+      - 41400:41400
+      - 41402:41402
+      - 41404:41404
+    command:
+      -XX:+HeapDumpOnOutOfMemoryError
+      -XX:HeapDumpPath=/var/lib/rnode-diag/current/heapdump_OOM.hprof
+      -XX:+ExitOnOutOfMemoryError
+      -XX:ErrorFile=/var/lib/rnode-diag/current/hs_err.log
+      -Dlogback.configurationFile=/var/lib/rnode-static/logback.xml
+      -XX:MaxRAMPercentage=75
+      -XX:MaxDirectMemorySize=1g
+      run
+      -c /var/lib/rnode/rnode-v2.conf
+      --host node1.testnet.rchain.coop
+      --network-id testnet02032020
+      --shard-name rchain
+      --bootstrap rnode://25a48e34b10c5917aa21bdbbf45da56d3e7129c6@node0.testnet.rchain-dev.tk?protocol=40400&discovery=40404
+      --finalization-rate 1
+      --fault-tolerance-threshold -1
+      --synchrony-constraint-threshold 0.99
+      --max-number-of-parents 1
+      --api-max-blocks-limit=3
+    volumes:
+      - /rchain/node1/rnode/:/var/lib/rnode/
+      - /rchain/node1/rnode-diag/:/var/lib/rnode-diag/
+      - /rchain/node1/rnode-static/:/var/lib/rnode-static/:ro
+
+########################################################################
+  testnet-node2:
+    mem_limit: 8g
+    image: rchain/rnode:v0.9.25.6-rc
+    user: root
+    container_name: node2
+    ports:
+      - 42400:42400
+      - 42402:42402
+      - 42404:42404
+    command:
+      -XX:+HeapDumpOnOutOfMemoryError
+      -XX:HeapDumpPath=/var/lib/rnode-diag/current/heapdump_OOM.hprof
+      -XX:+ExitOnOutOfMemoryError
+      -XX:ErrorFile=/var/lib/rnode-diag/current/hs_err.log
+      -Dlogback.configurationFile=/var/lib/rnode-static/logback.xml
+      -XX:MaxRAMPercentage=75
+      -XX:MaxDirectMemorySize=1g
+      run
+      -c /var/lib/rnode/rnode-v2.conf
+      --host node2.testnet.rchain.coop
+      --network-id testnet02032020
+      --shard-name rchain
+      --bootstrap rnode://25a48e34b10c5917aa21bdbbf45da56d3e7129c6@node0.testnet.rchain-dev.tk?protocol=40400&discovery=40404
+      --finalization-rate 1
+      --fault-tolerance-threshold -1
+      --synchrony-constraint-threshold 0.99
+      --max-number-of-parents 1
+      --api-max-blocks-limit=3
+    volumes:
+      - /rchain/node2/rnode/:/var/lib/rnode/
+      - /rchain/node2/rnode-diag/:/var/lib/rnode-diag/
+      - /rchain/node2/rnode-static/:/var/lib/rnode-static/:ro
+
+########################################################################
+  testnet-node3:
+    mem_limit: 8g
+    image: rchain/rnode:v0.9.25.6-rc
+    user: root
+    container_name: node3
+    ports:
+      - 43400:43400
+      - 43402:43402
+      - 43404:43404
+    command:
+      -XX:+HeapDumpOnOutOfMemoryError
+      -XX:HeapDumpPath=/var/lib/rnode-diag/current/heapdump_OOM.hprof
+      -XX:+ExitOnOutOfMemoryError
+      -XX:ErrorFile=/var/lib/rnode-diag/current/hs_err.log
+      -Dlogback.configurationFile=/var/lib/rnode-static/logback.xml
+      -XX:MaxRAMPercentage=75
+      -XX:MaxDirectMemorySize=1g
+      run
+      -c /var/lib/rnode/rnode-v2.conf
+      --host node3.testnet.rchain.coop
+      --network-id testnet02032020
+      --shard-name rchain
+      --bootstrap rnode://25a48e34b10c5917aa21bdbbf45da56d3e7129c6@node0.testnet.rchain-dev.tk?protocol=40400&discovery=40404
+      --finalization-rate 1
+      --fault-tolerance-threshold -1
+      --synchrony-constraint-threshold 0.99
+      --max-number-of-parents 1
+      --api-max-blocks-limit=3
+    volumes:
+      - /rchain/node3/rnode/:/var/lib/rnode/
+      - /rchain/node3/rnode-diag/:/var/lib/rnode-diag/
+      - /rchain/node3/rnode-static/:/var/lib/rnode-static/:ro
+
+########################################################################
+  testnet-node4:
+    mem_limit: 8g
+    image: rchain/rnode:v0.9.25.6-rc
+    user: root
+    container_name: node4
+    ports:
+      - 44400:44400
+      - 44402:44402
+      - 44404:44404
+    command:
+      -XX:+HeapDumpOnOutOfMemoryError
+      -XX:HeapDumpPath=/var/lib/rnode-diag/current/heapdump_OOM.hprof
+      -XX:+ExitOnOutOfMemoryError
+      -XX:ErrorFile=/var/lib/rnode-diag/current/hs_err.log
+      -Dlogback.configurationFile=/var/lib/rnode-static/logback.xml
+      -XX:MaxRAMPercentage=75
+      -XX:MaxDirectMemorySize=1g
+      run
+      -c /var/lib/rnode/rnode-v2.conf
+      --host node4.testnet.rchain.coop
+      --network-id testnet02032020
+      --shard-name rchain
+      --bootstrap rnode://25a48e34b10c5917aa21bdbbf45da56d3e7129c6@node0.testnet.rchain-dev.tk?protocol=40400&discovery=40404
+      --finalization-rate 1
+      --fault-tolerance-threshold -1
+      --synchrony-constraint-threshold 0.99
+      --max-number-of-parents 1
+      --api-max-blocks-limit=3
+    volumes:
+      - /rchain/node4/rnode/:/var/lib/rnode/
+      - /rchain/node4/rnode-diag/:/var/lib/rnode-diag/
+      - /rchain/node4/rnode-static/:/var/lib/rnode-static/:ro
+
+########################################################################
+  testnet-observer:
+    mem_limit: 8g
+    image: rchain/rnode:v0.9.25.6-rc
+    user: root
+    container_name: observer
+    ports:
+      - 45400:45400
+      - 45402:45402
+      - 45404:45404
+    command:
+      -XX:+HeapDumpOnOutOfMemoryError
+      -XX:HeapDumpPath=/var/lib/rnode-diag/current/heapdump_OOM.hprof
+      -XX:+ExitOnOutOfMemoryError
+      -XX:ErrorFile=/var/lib/rnode-diag/current/hs_err.log
+      -Dlogback.configurationFile=/var/lib/rnode-static/logback.xml
+      -XX:MaxRAMPercentage=75
+      -XX:MaxDirectMemorySize=1g
+      run
+      -c /var/lib/rnode/rnode-v2.conf
+      --host observer.testnet.rchain.coop
+      --network-id testnet02032020
+      --shard-name rchain
+      --bootstrap rnode://25a48e34b10c5917aa21bdbbf45da56d3e7129c6@node0.testnet.rchain-dev.tk?protocol=40400&discovery=40404
+      --finalization-rate 1
+      --fault-tolerance-threshold -1
+      --synchrony-constraint-threshold 0.99
+      --max-number-of-parents 1
+      --api-max-blocks-limit=100
+      --api-enable-reporting
+    volumes:
+      - /rchain/observer/rnode/:/var/lib/rnode/
+      - /rchain/observer/rnode-diag/:/var/lib/rnode-diag/
+      - /rchain/observer/rnode-static/:/var/lib/rnode-static/:ro
+
+########################################################################
