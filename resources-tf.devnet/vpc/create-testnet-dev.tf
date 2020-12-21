@@ -61,10 +61,10 @@ resource "ibm_is_instance" "vm1" {
 resource "ibm_is_volume" "vol1" {
 	count	= length(local.vm_list)
 	name	= "${var.resource_group}-${local.region}-${local.vm_list[count.index]}-data"
-	profile	= "5iops-tier"
+	profile	= "3iops-tier"
 	zone	= "${local.region}-${count.index % local.zones + 1}"
         tags	= local.tags
-	capacity= 1000
+	capacity= 750
 	resource_group = data.ibm_resource_group.res_grp.id
 }
 
