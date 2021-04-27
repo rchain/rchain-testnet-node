@@ -118,17 +118,17 @@ class Client():
                         time.sleep(waitforPropose)
                         return self.deploy_and_propose(deploy_key, contract, phlo_price, phlo_limit, waitforPropose)
                     return block_hash
-                elif "another propose in progress" in error_message:
+                elif "another propose is in progress" in error_message:
                     logging.info(
                         "because there is anther process is proposing, wait {} seconds and propose again".format(
                             waitforPropose))
                     time.sleep(waitforPropose)
                     return self.deploy_and_propose(deploy_key, contract, phlo_price, phlo_limit, waitforPropose)
-                elif "more blocks from other validators" in error_message:  # Must wait for more blocks from other validators
+                elif "NotEnoughNewBlocks" in error_message:  # Must wait for more blocks from other validators
                     logging.info("Must wait for more blocks from other validators on {}".format(self.host_name))
                     logging.info("Skip propoing on {}".format(self.host_name))
                     return
-                elif "Too far ahead of the last finalized" in error_message:  # Too far ahead of the last finalized block
+                elif "TooFarAheadOfLastFinalized" in error_message:  # Too far ahead of the last finalized block
                     logging.info("Too far ahead of the last finalized block on {}".format(self.host_name))
                     logging.info("Skip propoing on {}".format(self.host_name))
                     return
