@@ -35,6 +35,7 @@ deploy:
     phlo_limit: 100000
     phlo_price: 1
     deploy_key: 34d969f43affa8e5c47900e6db475cb8ddd8520170ee73b2207c54014006ff2b
+    shardID: shardID
 
 This script would take the orders node1 -> node2 -> node2 to propose block in order.
 
@@ -81,67 +82,73 @@ class Client():
         self.grpc_options = (
             ('grpc.keepalive_time_ms', self.keepalive), ('grpc.keepalive_timeout_ms', self.keepalive_timeout),)
 
-    def deploy_and_propose(self, deploy_key, contract, phlo_price, phlo_limit, waitforPropose):
+    def prospose(self):
         with RClient(self.host, self.port, self.grpc_options) as client:
-            try:
-                logging.info("Trying to propose directly. on {}".format(self.host_name))
-                blockhash = client.propose()
-                logging.info("Successfully propose directly {} on {}".format(blockhash, self.host_name))
-                return blockhash
-            except RClientException as e:
-                error_message = e.args[0]
-                if "NoNewDeploys" in error_message:
-                    logging.info("The node {} doesn't have new deploy. Going to deploy now".format(self.host_name))
-                    try:
-                        timestamp = int(time.time() * 1000)
-                        if self.valid_offset != 0:
-                            latest_blocks = client.show_blocks(1)
-                            latest_block = latest_blocks[0]
-                            latest_block_num = latest_block.blockNumber
-                            deploy_id = client.deploy(deploy_key, contract, phlo_price, phlo_limit,
-                                                      latest_block_num + self.valid_offset, timestamp)
-                        else:
-                            deploy_id = client.deploy_with_vabn_filled(deploy_key, contract, phlo_price,
-                                                                       phlo_limit,
-                                                                       timestamp)
-                        logging.info("Succefully deploy {}".format(deploy_id))
-                        logging.info("going to propose on {}".format(self.host_name))
-                        start = time.time()
-                        block_hash = client.propose()
-                        logging.info("Successfully propose {} done and it takes {} second on {}".format(block_hash,
-                                                                                                        time.time() - start,
-                                                                                                        self.host_name))
-                    except grpc.RpcError as e:
-                        logging.info(
-                            "Sleep {} and try again because :deploy and propose {} got grpc error: {}, {}".format(
-                                waitforPropose, self.host_name, e.details(), e.code()))
-                        time.sleep(waitforPropose)
-                        return self.deploy_and_propose(deploy_key, contract, phlo_price, phlo_limit, waitforPropose)
+            logging.info("going to propose on {}".format(self.host_name))
+            start = time.time()
+            blockhash = client.propose()
+            logging.info("Successfully propose {} done and it takes {} second on {}".format(blockhash,
+                                                                                            time.time() - start,
+                                                                                            self.host_name))
+            return blockhash
+
+    def deploy(self, deploy_key, contract, phlo_price, phlo_limit, shard_ID):
+        logging.info("Going to deploy now on {}".format(self.host_name))
+        with RClient(self.host, self.port, self.grpc_options) as client:
+            timestamp = int(time.time() * 1000)
+            if self.valid_offset != 0:
+                latest_blocks = client.show_blocks(1)
+                latest_block = latest_blocks[0]
+                latest_block_num = latest_block.blockNumber
+                deploy_id = client.deploy(deploy_key, contract, phlo_price, phlo_limit,
+                                          latest_block_num + self.valid_offset, timestamp, shard_ID)
+            else:
+                deploy_id = client.deploy_with_vabn_filled(deploy_key, contract, phlo_price,
+                                                           phlo_limit,
+                                                           timestamp, shard_ID)
+            logging.info("Successfully deploy {}".format(deploy_id))
+
+    def deploy_and_propose(self, deploy_key, contract, phlo_price, phlo_limit, waitforPropose, shard_ID):
+        try:
+            blockhash = self.prospose()
+            return blockhash
+        except RClientException as e:
+            error_message = e.args[0]
+            if "NoNewDeploys" in error_message:
+                try:
+                    self.deploy(deploy_key, contract, phlo_price, phlo_limit, shard_ID)
+                    block_hash = self.prospose()
                     return block_hash
-                elif "another propose is in progress" in error_message:
+                except grpc.RpcError as e:
                     logging.info(
-                        "because there is anther process is proposing, wait {} seconds and propose again".format(
-                            waitforPropose))
+                        "Sleep {} and try again because :deploy and propose {} got grpc error: {}, {}".format(
+                            waitforPropose, self.host_name, e.details(), e.code()))
                     time.sleep(waitforPropose)
-                    return self.deploy_and_propose(deploy_key, contract, phlo_price, phlo_limit, waitforPropose)
-                elif "NotEnoughNewBlocks" in error_message:  # Must wait for more blocks from other validators
-                    logging.info("Must wait for more blocks from other validators on {}".format(self.host_name))
-                    logging.info("Skip propoing on {}".format(self.host_name))
-                    return
-                elif "TooFarAheadOfLastFinalized" in error_message:  # Too far ahead of the last finalized block
-                    logging.info("Too far ahead of the last finalized block on {}".format(self.host_name))
-                    logging.info("Skip propoing on {}".format(self.host_name))
-                    return
-                else:
-                    logging.error("unknown error on proposing {}: {}".format(self.host_name, e))
-                    sys.exit(1)
-            except grpc.RpcError as e:
-                logging.warning("Directly propose {} got grpc error: {}, {}".format(self.host_name, e.details(),
-                                                                                    e.code()))
-                return self.deploy_and_propose(deploy_key, contract, phlo_price, phlo_limit, waitforPropose)
-            except Exception as e:
-                logging.error("Unknown error: {}".format(e))
-                raise e
+                    return self.deploy_and_propose(deploy_key, contract, phlo_price, phlo_limit, waitforPropose, shard_ID)
+            elif "another propose is in progress" in error_message:
+                logging.info(
+                    "because there is anther process is proposing, wait {} seconds and propose again".format(
+                        waitforPropose))
+                time.sleep(waitforPropose)
+                return self.deploy_and_propose(deploy_key, contract, phlo_price, phlo_limit, waitforPropose, shard_ID)
+            elif "NotEnoughNewBlocks" in error_message:  # Must wait for more blocks from other validators
+                logging.info("Must wait for more blocks from other validators on {}".format(self.host_name))
+                logging.info("Skip propoing on {}".format(self.host_name))
+                return
+            elif "TooFarAheadOfLastFinalized" in error_message:  # Too far ahead of the last finalized block
+                logging.info("Too far ahead of the last finalized block on {}".format(self.host_name))
+                logging.info("Skip propoing on {}".format(self.host_name))
+                return
+            else:
+                logging.error("unknown error on proposing {}: {}".format(self.host_name, e))
+                sys.exit(1)
+        except grpc.RpcError as e:
+            logging.warning("Directly propose {} got grpc error: {}, {}".format(self.host_name, e.details(),
+                                                                                e.code()))
+            return self.deploy_and_propose(deploy_key, contract, phlo_price, phlo_limit, waitforPropose, shard_ID)
+        except Exception as e:
+            logging.error("Unknown error: {}".format(e))
+            raise e
 
     def is_contain_block_hash(self, block_hash):
         with RClient(self.host, self.port, self.grpc_options) as client:
@@ -182,6 +189,7 @@ class DispatchCenter():
 
         self.phlo_limit = int(config['deploy']['phlo_limit'])
         self.phlo_price = int(config['deploy']['phlo_price'])
+        self.shard_ID = config['deploy']['shardID']
 
         self.wait_timeout = int(config['waitTimeout'])
         self.wait_interval = int(config['waitInterval'])
@@ -207,7 +215,7 @@ class DispatchCenter():
         try:
             self.queue.append(current_server)
             block_hash = client.deploy_and_propose(self.deploy_key, self.contract, self.phlo_price, self.phlo_limit,
-                                                   self.wait_interval)
+                                                   self.wait_interval, self.shard_ID)
             return block_hash
         except Exception as e:
             logging.error("Node {} can not deploy and propose because of {}".format(client.host_name, e))

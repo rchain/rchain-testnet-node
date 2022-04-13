@@ -34,6 +34,7 @@ deploy:
     phlo_limit: 100000
     phlo_price: 1
     deploy_key: 34d969f43affa8e5c47900e6db475cb8ddd8520170ee73b2207c54014006ff2b
+    shardID: shardID
 
 This script would take the orders node1 -> node2 -> node2 to propose block in order.
 
@@ -89,7 +90,7 @@ class Client():
             self.latest_message = latest_blocks[0].blockHash
             return self.latest_message
 
-    def deploy_and_propose(self, deploy_key, contract, phlo_price, phlo_limit, waitforPropose):
+    def deploy_and_propose(self, deploy_key, contract, phlo_price, phlo_limit, waitforPropose, shard_ID):
         with RClient(self.host, self.port, self.grpc_options) as client:
             try:
                 logging.info("Trying to propose directly. on {}".format(self.host_name))
@@ -107,11 +108,11 @@ class Client():
                             latest_block = latest_blocks[0]
                             latest_block_num = latest_block.blockNumber
                             deploy_id = client.deploy(deploy_key, contract, phlo_price, phlo_limit,
-                                                      latest_block_num + self.valid_offset,timestamp)
+                                                      latest_block_num + self.valid_offset,timestamp, shard_ID)
                         else:
                             deploy_id = client.deploy_with_vabn_filled(deploy_key, contract, phlo_price,
                                                                        phlo_limit,
-                                                                       timestamp)
+                                                                       timestamp, shard_ID)
                         logging.info("Succefully deploy {}".format(deploy_id))
                         logging.info("going to propose on {}".format(self.host_name))
                         start = time.time()
@@ -177,6 +178,7 @@ class DispatchCenter():
 
         self.phlo_limit = int(config['deploy']['phlo_limit'])
         self.phlo_price = int(config['deploy']['phlo_price'])
+        self.shard_ID = config['deploy']['shardID']
 
         self.wait_timeout = int(config['waitTimeout'])
         self.wait_interval = int(config['waitInterval'])
@@ -216,7 +218,7 @@ class DispatchCenter():
         try:
             self.queue.append(current_server)
             block_hash = client.deploy_and_propose(self.deploy_key, self.contract, self.phlo_price, self.phlo_limit,
-                                                   self.wait_interval)
+                                                   self.wait_interval, self.shard_ID)
             return block_hash
         except Exception as e:
             logging.error("Node {} can not deploy and propose because of {}".format(client.host_name, e))
