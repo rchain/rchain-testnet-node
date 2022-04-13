@@ -35,6 +35,7 @@ deploy:
     phlo_limit: 100000
     phlo_price: 1
     deploy_key: 34d969f43affa8e5c47900e6db475cb8ddd8520170ee73b2207c54014006ff2b
+    shardID: shardID
 
 This script would take the orders node1 -> node2 -> node2 to propose block in order.
 
@@ -91,7 +92,7 @@ class Client():
                                                                                             self.host_name))
             return blockhash
 
-    def deploy(self, deploy_key, contract, phlo_price, phlo_limit):
+    def deploy(self, deploy_key, contract, phlo_price, phlo_limit, shard_ID):
         logging.info("Going to deploy now on {}".format(self.host_name))
         with RClient(self.host, self.port, self.grpc_options) as client:
             timestamp = int(time.time() * 1000)
@@ -100,14 +101,14 @@ class Client():
                 latest_block = latest_blocks[0]
                 latest_block_num = latest_block.blockNumber
                 deploy_id = client.deploy(deploy_key, contract, phlo_price, phlo_limit,
-                                          latest_block_num + self.valid_offset, timestamp)
+                                          latest_block_num + self.valid_offset, timestamp, shard_ID)
             else:
                 deploy_id = client.deploy_with_vabn_filled(deploy_key, contract, phlo_price,
                                                            phlo_limit,
-                                                           timestamp)
+                                                           timestamp, shard_ID)
             logging.info("Successfully deploy {}".format(deploy_id))
 
-    def deploy_and_propose(self, deploy_key, contract, phlo_price, phlo_limit, waitforPropose):
+    def deploy_and_propose(self, deploy_key, contract, phlo_price, phlo_limit, waitforPropose, shard_ID):
         try:
             blockhash = self.prospose()
             return blockhash
@@ -115,7 +116,7 @@ class Client():
             error_message = e.args[0]
             if "NoNewDeploys" in error_message:
                 try:
-                    self.deploy(deploy_key, contract, phlo_price, phlo_limit)
+                    self.deploy(deploy_key, contract, phlo_price, phlo_limit, shard_ID)
                     block_hash = self.prospose()
                     return block_hash
                 except grpc.RpcError as e:
@@ -123,13 +124,13 @@ class Client():
                         "Sleep {} and try again because :deploy and propose {} got grpc error: {}, {}".format(
                             waitforPropose, self.host_name, e.details(), e.code()))
                     time.sleep(waitforPropose)
-                    return self.deploy_and_propose(deploy_key, contract, phlo_price, phlo_limit, waitforPropose)
+                    return self.deploy_and_propose(deploy_key, contract, phlo_price, phlo_limit, waitforPropose, shard_ID)
             elif "another propose is in progress" in error_message:
                 logging.info(
                     "because there is anther process is proposing, wait {} seconds and propose again".format(
                         waitforPropose))
                 time.sleep(waitforPropose)
-                return self.deploy_and_propose(deploy_key, contract, phlo_price, phlo_limit, waitforPropose)
+                return self.deploy_and_propose(deploy_key, contract, phlo_price, phlo_limit, waitforPropose, shard_ID)
             elif "NotEnoughNewBlocks" in error_message:  # Must wait for more blocks from other validators
                 logging.info("Must wait for more blocks from other validators on {}".format(self.host_name))
                 logging.info("Skip propoing on {}".format(self.host_name))
@@ -144,7 +145,7 @@ class Client():
         except grpc.RpcError as e:
             logging.warning("Directly propose {} got grpc error: {}, {}".format(self.host_name, e.details(),
                                                                                 e.code()))
-            return self.deploy_and_propose(deploy_key, contract, phlo_price, phlo_limit, waitforPropose)
+            return self.deploy_and_propose(deploy_key, contract, phlo_price, phlo_limit, waitforPropose, shard_ID)
         except Exception as e:
             logging.error("Unknown error: {}".format(e))
             raise e
@@ -188,6 +189,7 @@ class DispatchCenter():
 
         self.phlo_limit = int(config['deploy']['phlo_limit'])
         self.phlo_price = int(config['deploy']['phlo_price'])
+        self.shard_ID = config['deploy']['shardID']
 
         self.wait_timeout = int(config['waitTimeout'])
         self.wait_interval = int(config['waitInterval'])
@@ -213,7 +215,7 @@ class DispatchCenter():
         try:
             self.queue.append(current_server)
             block_hash = client.deploy_and_propose(self.deploy_key, self.contract, self.phlo_price, self.phlo_limit,
-                                                   self.wait_interval)
+                                                   self.wait_interval, self.shard_ID)
             return block_hash
         except Exception as e:
             logging.error("Node {} can not deploy and propose because of {}".format(client.host_name, e))
